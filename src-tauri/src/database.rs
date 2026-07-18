@@ -143,10 +143,75 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
             CREATE INDEX IF NOT EXISTS idx_quote_items_quote_position
                 ON quote_items (quote_id, position);
 
-            PRAGMA user_version = 3;
+            CREATE TABLE IF NOT EXISTS calendar_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL CHECK (length(trim(title)) >= 2),
+                description TEXT,
+                client_id INTEGER,
+                event_type TEXT NOT NULL DEFAULT 'appointment'
+                    CHECK (event_type IN ('appointment', 'meeting', 'call', 'reminder', 'other')),
+                status TEXT NOT NULL DEFAULT 'scheduled'
+                    CHECK (status IN ('scheduled', 'completed', 'cancelled')),
+                starts_at TEXT NOT NULL,
+                ends_at TEXT,
+                is_all_day INTEGER NOT NULL DEFAULT 0
+                    CHECK (is_all_day IN (0, 1)),
+                created_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                updated_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE RESTRICT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_calendar_events_start_status
+                ON calendar_events (starts_at, status);
+
+            CREATE INDEX IF NOT EXISTS idx_calendar_events_client
+                ON calendar_events (client_id);
+
+            PRAGMA user_version = 4;
             ",
         )
         .map_err(|error| format!("No se pudo preparar la base de datos: {error}"))?;
 
     Ok(connection)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn creates_the_calendar_schema_at_version_four() {
+        let unique_suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time should be valid")
+            .as_nanos();
+        let database_path = std::env::temp_dir().join(format!(
+            "local-crm-schema-{}-{unique_suffix}.sqlite3",
+            std::process::id()
+        ));
+
+        let connection =
+            initialize_database(&database_path).expect("the database should initialize correctly");
+        let version: i64 = connection
+            .query_row("PRAGMA user_version", [], |row| row.get(0))
+            .expect("the schema version should be readable");
+        let calendar_table_count: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'calendar_events'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("the calendar table should be readable");
+
+        assert_eq!(version, 4);
+        assert_eq!(calendar_table_count, 1);
+
+        drop(connection);
+        std::fs::remove_file(database_path).expect("the temporary database should be removable");
+    }
 }

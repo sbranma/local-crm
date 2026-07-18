@@ -58,7 +58,16 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 - Manejar estados pendiente, en progreso y completada.
 - Manejar prioridad y fecha y hora programada cuando corresponda.
 - Consultar tareas pendientes y completadas.
-- Conservar una única fuente de datos para que una futura Agenda pueda consultar y actualizar las mismas tareas sin duplicarlas.
+- Conservar una única fuente de datos para que Agenda consulte y actualice las mismas tareas sin duplicarlas.
+
+### Agenda
+
+- Mostrar en vistas mensual, semanal y diaria las tareas que tengan fecha programada.
+- Permitir crear, consultar, editar y eliminar citas, reuniones, llamadas, recordatorios y otros eventos.
+- Relacionar opcionalmente eventos con clientes existentes.
+- Permitir actualizar desde Agenda la fecha y el estado de una tarea sin duplicar su registro.
+- Manejar eventos de todo el día, estados programado, completado y cancelado, búsqueda y filtros.
+- Mantener eventos y tareas como fuentes separadas que la interfaz combina únicamente para su presentación.
 
 ### Cotizaciones
 
@@ -92,7 +101,6 @@ Los siguientes módulos son posibilidades futuras y no forman parte del MVP salv
 - Vehículos.
 - Inventario.
 - Productos.
-- Agenda y calendario.
 - Facturas.
 - Reportes avanzados.
 - Catálogo.

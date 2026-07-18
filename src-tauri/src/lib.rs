@@ -1,3 +1,4 @@
+mod calendar;
 mod clients;
 mod database;
 mod pdf_export;
@@ -35,6 +36,11 @@ pub fn run() {
             clients::update_client,
             clients::set_client_archived,
             clients::delete_client,
+            calendar::create_calendar_event,
+            calendar::list_calendar_events,
+            calendar::update_calendar_event,
+            calendar::set_calendar_event_status,
+            calendar::delete_calendar_event,
             tasks::create_task,
             tasks::list_tasks,
             tasks::update_task,

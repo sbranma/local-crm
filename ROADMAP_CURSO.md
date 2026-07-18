@@ -137,7 +137,7 @@ Crear una interfaz navegable sin implementar todavía las funciones completas.
 ### Construcción
 
 - Estructura visual principal.
-- Navegación para Dashboard, Clientes, Tareas, Cotizaciones y Configuración.
+- Navegación para Dashboard, Clientes, Tareas, Agenda, Cotizaciones y Configuración.
 - Componentes visuales básicos reutilizables solo cuando exista una necesidad real.
 - Pantallas vacías coherentes con el producto.
 - Datos ficticios claramente identificados para validar el diseño.
@@ -246,6 +246,25 @@ Administrar trabajo pendiente y relacionarlo opcionalmente con clientes.
 ### Criterio para avanzar
 
 Las tareas pueden administrarse sin inconsistencias y la relación con clientes no elimina ni altera datos accidentalmente.
+
+## Fase 5.5 — Módulo de Agenda
+
+### Objetivo
+
+Reunir tareas programadas y eventos propios en una sola vista temporal sin duplicar información.
+
+### Construcción
+
+- Vistas mensual, semanal y diaria.
+- Eventos con tipo, estado, horario, cliente opcional y notas.
+- CRUD completo para eventos.
+- Consulta y actualización de fecha y estado de tareas desde Agenda.
+- Filtros por texto, tipo, estado, prioridad y cliente.
+- Manejo local de fechas y eventos de todo el día.
+
+### Criterio para avanzar
+
+Una tarea editada desde Agenda conserva el mismo registro en Tareas y los eventos sobreviven al reinicio de la aplicación.
 
 ## Fase 6 — Módulo de Cotizaciones
 
@@ -366,10 +385,11 @@ Un pequeño negocio puede instalar Local CRM, configurar sus datos, administrar 
 4. Persistencia y arquitectura mínima.
 5. Clientes.
 6. Tareas.
-7. Cotizaciones.
-8. Dashboard y configuración.
-9. Backups y restauración.
-10. Calidad, instalador y presentación profesional.
+7. Agenda.
+8. Cotizaciones.
+9. Dashboard y configuración.
+10. Backups y restauración.
+11. Calidad, instalador y presentación profesional.
 
 ## Reglas para no perdernos
 
