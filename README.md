@@ -1,10 +1,10 @@
 # Local CRM
 
-Aplicación de escritorio local para que pequeños negocios administren clientes, tareas y cotizaciones sin depender de un servidor externo para las funciones principales.
+Aplicación de escritorio local para que pequeños negocios de servicios administren clientes, tareas y cotizaciones sin depender de un servidor externo para las funciones principales.
 
 ## Estado
 
-El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y persistencia local con SQLite en una fase posterior.
+El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados.
 
 ## Desarrollo
 

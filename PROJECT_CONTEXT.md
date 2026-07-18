@@ -15,10 +15,15 @@ El proyecto también funciona como una pieza profesional de portafolio. Debe dem
 - Permitir agregar módulos en el futuro sin rehacer el núcleo de la aplicación.
 - Proporcionar respaldos y restauración de datos comprensibles para usuarios no técnicos.
 - Mantener una experiencia profesional, limpia y fácil de aprender.
+- Servir como implementación de referencia comprensible y extensible para desarrolladores que quieran estudiar o adaptar un CRM local.
 
 ## Usuarios previstos
 
-Pequeños negocios y trabajadores independientes que necesitan organizar su operación desde una computadora con Windows. La interfaz debe asumir que el usuario no tiene conocimientos técnicos.
+Pequeños negocios de servicios y trabajadores independientes que necesitan organizar su operación desde una computadora con Windows. Algunos ejemplos son técnicos, contratistas, freelancers, consultores, pequeñas agencias y proveedores de servicios a domicilio o para eventos.
+
+El usuario ideal trabaja solo o con un equipo reducido, maneja un volumen pequeño o mediano de clientes y cotizaciones, y no necesita sincronización obligatoria entre dispositivos. La interfaz debe asumir que el usuario no tiene conocimientos técnicos.
+
+El MVP no pretende cubrir todavía negocios con inventario complejo, equipos distribuidos, múltiples sucursales, expedientes clínicos, operación de restaurantes o facturación fiscal especializada.
 
 ## Stack propuesto
 
@@ -42,6 +47,7 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 ### Clientes
 
 - Crear, consultar, editar y archivar clientes.
+- Restaurar clientes archivados o eliminarlos definitivamente con confirmación explícita.
 - Guardar información de contacto y notas necesarias para la operación.
 - Buscar y filtrar registros.
 - Validar la información antes de guardarla.
