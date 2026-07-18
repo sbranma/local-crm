@@ -29,7 +29,8 @@ button {
 
 button:focus-visible,
 input:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+select:focus-visible {
   outline: 3px solid rgba(242, 191, 74, 0.55);
   outline-offset: 2px;
 }
@@ -400,6 +401,7 @@ h1 {
 
 .form-field input,
 .form-field textarea,
+.form-field select,
 .client-search input {
   width: 100%;
   border: 1px solid #cdd6e5;
@@ -416,6 +418,7 @@ h1 {
 
 .form-field input:hover,
 .form-field textarea:hover,
+.form-field select:hover,
 .client-search input:hover {
   border-color: #9cabc3;
 }
@@ -630,6 +633,141 @@ h1 {
   color: #a43a3a;
 }
 
+.task-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.task-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #dfe5ee;
+  border-radius: 14px;
+  padding: 15px 17px;
+  background: #ffffff;
+}
+
+.task-summary-card span {
+  color: #65728b;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.task-summary-card strong {
+  color: #182640;
+  font-size: 1.5rem;
+}
+
+.task-summary-card.overdue {
+  border-color: #edc3c3;
+  background: #fff8f8;
+}
+
+.task-summary-card.overdue strong {
+  color: #a43131;
+}
+
+.tasks-toolbar {
+  align-items: flex-end;
+}
+
+.task-filters {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.task-filter {
+  display: grid;
+  gap: 4px;
+  color: #65728b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.task-filter select {
+  min-width: 126px;
+  border: 1px solid #cdd6e5;
+  border-radius: 9px;
+  padding: 8px 30px 8px 10px;
+  color: #344463;
+  background: #ffffff;
+}
+
+.tasks-table {
+  min-width: 980px;
+}
+
+.task-description {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-badge,
+.overdue-label {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.priority-low {
+  color: #45617c;
+  background: #edf3f8;
+}
+
+.priority-normal {
+  color: #66551d;
+  background: #fff7d8;
+}
+
+.priority-high {
+  color: #862e2e;
+  background: #ffebeb;
+}
+
+.status-pending {
+  color: #6b571d;
+  background: #fff4cc;
+}
+
+.status-in_progress {
+  color: #31558c;
+  background: #e9f1ff;
+}
+
+.status-completed {
+  color: #2b6643;
+  background: #e8f7ee;
+}
+
+.overdue-label {
+  margin-top: 5px;
+  color: #8b2f2f;
+  background: #ffebeb;
+}
+
+.task-row-overdue {
+  background: #fffafa;
+}
+
+.task-row-overdue:hover {
+  background: #fff5f5 !important;
+}
+
+.task-row-actions {
+  min-width: 210px;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 210px minmax(0, 1fr);
@@ -639,6 +777,10 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .task-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .clients-toolbar,
   .archive-confirmation {
     align-items: stretch;
@@ -646,6 +788,18 @@ h1 {
   }
 
   .client-search {
+    width: 100%;
+  }
+
+  .task-filters {
+    width: 100%;
+  }
+
+  .task-filter {
+    flex: 1;
+  }
+
+  .task-filter select {
     width: 100%;
   }
 

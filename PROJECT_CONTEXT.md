@@ -55,8 +55,10 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 ### Tareas
 
 - Crear y organizar tareas relacionadas con la operación o con un cliente.
-- Manejar estado, prioridad y fecha límite cuando corresponda.
+- Manejar estados pendiente, en progreso y completada.
+- Manejar prioridad y fecha y hora programada cuando corresponda.
 - Consultar tareas pendientes y completadas.
+- Conservar una única fuente de datos para que una futura Agenda pueda consultar y actualizar las mismas tareas sin duplicarlas.
 
 ### Cotizaciones
 

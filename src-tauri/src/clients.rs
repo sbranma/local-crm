@@ -189,7 +189,16 @@ pub fn delete_client(state: State<'_, DatabaseState>, id: i64) -> Result<(), Str
             "DELETE FROM clients WHERE id = ?1 AND is_archived = 1",
             params![id],
         )
-        .map_err(|error| format!("No se pudo eliminar el cliente: {error}"))?;
+        .map_err(|error| {
+            if let rusqlite::Error::SqliteFailure(sqlite_error, _) = &error {
+                if sqlite_error.code == rusqlite::ErrorCode::ConstraintViolation {
+                    return "No se puede eliminar el cliente porque tiene tareas relacionadas."
+                        .to_owned();
+                }
+            }
+
+            format!("No se pudo eliminar el cliente: {error}")
+        })?;
 
     if deleted_rows == 0 {
         return Err(

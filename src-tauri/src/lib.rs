@@ -1,5 +1,6 @@
 mod clients;
 mod database;
+mod tasks;
 
 use rusqlite::Connection;
 use std::sync::Mutex;
@@ -29,7 +30,12 @@ pub fn run() {
             clients::list_clients,
             clients::update_client,
             clients::set_client_archived,
-            clients::delete_client
+            clients::delete_client,
+            tasks::create_task,
+            tasks::list_tasks,
+            tasks::update_task,
+            tasks::set_task_status,
+            tasks::delete_task
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ClientsPage } from "./features/clients/ClientsPage";
+import { TasksPage } from "./features/tasks/TasksPage";
 import "./App.css";
 
 const navigationItems = [
@@ -83,9 +84,11 @@ function App() {
       <main className="main-content">
         {activeSection === "Dashboard" && <DashboardPage />}
         {activeSection === "Clientes" && <ClientsPage />}
+        {activeSection === "Tareas" && <TasksPage />}
 
         {activeSection !== "Dashboard" &&
-          activeSection !== "Clientes" && (
+          activeSection !== "Clientes" &&
+          activeSection !== "Tareas" && (
             <PendingPage section={activeSection} />
           )}
       </main>

@@ -36,7 +36,33 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
             CREATE INDEX IF NOT EXISTS idx_clients_archived_name
                 ON clients (is_archived, name COLLATE NOCASE);
 
-            PRAGMA user_version = 1;
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL CHECK (length(trim(title)) >= 2),
+                description TEXT,
+                client_id INTEGER,
+                priority TEXT NOT NULL DEFAULT 'normal'
+                    CHECK (priority IN ('low', 'normal', 'high')),
+                status TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'in_progress', 'completed')),
+                scheduled_at TEXT,
+                completed_at TEXT,
+                created_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                updated_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE RESTRICT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_tasks_status_scheduled
+                ON tasks (status, scheduled_at);
+
+            CREATE INDEX IF NOT EXISTS idx_tasks_client
+                ON tasks (client_id);
+
+            PRAGMA user_version = 2;
             ",
         )
         .map_err(|error| format!("No se pudo preparar la base de datos: {error}"))?;

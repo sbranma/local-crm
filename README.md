@@ -4,7 +4,7 @@ Aplicación de escritorio local para que pequeños negocios de servicios adminis
 
 ## Estado
 
-El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados.
+El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados. El módulo de Tareas permite administrar actividades internas o asociadas a clientes, programarlas, priorizarlas y controlar su estado.
 
 ## Desarrollo
 

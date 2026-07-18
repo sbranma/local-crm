@@ -228,11 +228,12 @@ Administrar trabajo pendiente y relacionarlo opcionalmente con clientes.
 ### Construcción
 
 - Crear y editar tareas.
-- Estados pendiente y completada.
-- Prioridad y fecha límite opcional.
+- Estados pendiente, en progreso y completada.
+- Prioridad y fecha y hora programada opcional.
 - Asociación opcional con un cliente.
 - Vistas o filtros útiles para pendientes y completadas.
 - Manejo de fechas y casos límite.
+- Datos preparados para que una futura Agenda consulte las mismas tareas sin duplicarlas.
 
 ### Aprendizajes
 
