@@ -62,7 +62,88 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
             CREATE INDEX IF NOT EXISTS idx_tasks_client
                 ON tasks (client_id);
 
-            PRAGMA user_version = 2;
+            CREATE TABLE IF NOT EXISTS business_settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                business_name TEXT NOT NULL DEFAULT '',
+                identification TEXT,
+                phone TEXT,
+                email TEXT,
+                address TEXT,
+                currency TEXT NOT NULL DEFAULT 'CRC'
+                    CHECK (currency IN ('CRC', 'USD', 'EUR')),
+                default_tax_basis_points INTEGER NOT NULL DEFAULT 1300
+                    CHECK (default_tax_basis_points BETWEEN 0 AND 10000),
+                default_validity_days INTEGER NOT NULL DEFAULT 15
+                    CHECK (default_validity_days BETWEEN 1 AND 365),
+                terms TEXT,
+                logo_mime_type TEXT,
+                logo_data BLOB,
+                updated_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                )
+            );
+
+            INSERT OR IGNORE INTO business_settings (id) VALUES (1);
+
+            CREATE TABLE IF NOT EXISTS quotes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                quote_number TEXT NOT NULL UNIQUE,
+                client_id INTEGER NOT NULL,
+                client_name TEXT NOT NULL,
+                client_identification TEXT,
+                client_phone TEXT,
+                client_email TEXT,
+                client_address TEXT,
+                business_name TEXT NOT NULL,
+                business_identification TEXT,
+                business_phone TEXT,
+                business_email TEXT,
+                business_address TEXT,
+                currency TEXT NOT NULL,
+                issue_date TEXT NOT NULL,
+                valid_until TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'draft'
+                    CHECK (status IN ('draft', 'sent', 'accepted', 'rejected', 'expired')),
+                discount_basis_points INTEGER NOT NULL DEFAULT 0
+                    CHECK (discount_basis_points BETWEEN 0 AND 10000),
+                tax_basis_points INTEGER NOT NULL DEFAULT 0
+                    CHECK (tax_basis_points BETWEEN 0 AND 10000),
+                subtotal_minor INTEGER NOT NULL CHECK (subtotal_minor >= 0),
+                discount_minor INTEGER NOT NULL CHECK (discount_minor >= 0),
+                tax_minor INTEGER NOT NULL CHECK (tax_minor >= 0),
+                total_minor INTEGER NOT NULL CHECK (total_minor >= 0),
+                notes TEXT,
+                terms TEXT,
+                created_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                updated_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE RESTRICT
+            );
+
+            CREATE TABLE IF NOT EXISTS quote_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                quote_id INTEGER NOT NULL,
+                description TEXT NOT NULL,
+                quantity_millis INTEGER NOT NULL CHECK (quantity_millis > 0),
+                unit TEXT NOT NULL,
+                unit_price_minor INTEGER NOT NULL CHECK (unit_price_minor >= 0),
+                position INTEGER NOT NULL,
+                FOREIGN KEY (quote_id) REFERENCES quotes (id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_quotes_status_date
+                ON quotes (status, issue_date DESC);
+
+            CREATE INDEX IF NOT EXISTS idx_quotes_client
+                ON quotes (client_id);
+
+            CREATE INDEX IF NOT EXISTS idx_quote_items_quote_position
+                ON quote_items (quote_id, position);
+
+            PRAGMA user_version = 3;
             ",
         )
         .map_err(|error| format!("No se pudo preparar la base de datos: {error}"))?;

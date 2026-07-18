@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { ModalDialog } from "../../components/ModalDialog";
 import {
   createClient,
   deleteClient,
@@ -51,6 +52,7 @@ export function ClientsPage() {
     useState<ClientFormValues>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<ClientFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
   const [clientToArchive, setClientToArchive] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [actionClientId, setActionClientId] = useState<number | null>(null);
@@ -115,6 +117,7 @@ export function ClientsPage() {
   function openCreateForm() {
     setFormMode({ type: "create" });
     setFormValues(EMPTY_FORM);
+    setIsFormDirty(false);
     setFormErrors({});
     setPageError(null);
     setSuccessMessage(null);
@@ -130,6 +133,7 @@ export function ClientsPage() {
       address: client.address ?? "",
       notes: client.notes ?? "",
     });
+    setIsFormDirty(false);
     setFormErrors({});
     setPageError(null);
     setSuccessMessage(null);
@@ -140,13 +144,19 @@ export function ClientsPage() {
       return;
     }
 
+    if (isFormDirty && !window.confirm("¿Descartar los cambios sin guardar?")) {
+      return;
+    }
+
     setFormMode(null);
     setFormValues(EMPTY_FORM);
     setFormErrors({});
+    setIsFormDirty(false);
   }
 
   function updateFormField(field: keyof ClientFormValues, value: string) {
     setFormValues((current) => ({ ...current, [field]: value }));
+    setIsFormDirty(true);
 
     if (formErrors[field]) {
       setFormErrors((current) => ({ ...current, [field]: undefined }));
@@ -188,6 +198,7 @@ export function ClientsPage() {
       setFormMode(null);
       setFormValues(EMPTY_FORM);
       setFormErrors({});
+      setIsFormDirty(false);
     } catch (error: unknown) {
       setPageError(getErrorMessage(error, "No se pudo guardar el cliente."));
     } finally {
@@ -297,6 +308,11 @@ export function ClientsPage() {
       )}
 
       {formMode && (
+        <ModalDialog
+          className="form-modal"
+          labelledBy="client-form-title"
+          onRequestClose={closeForm}
+        >
         <section className="client-form-card" aria-labelledby="client-form-title">
           <div className="client-form-header">
             <div>
@@ -379,6 +395,7 @@ export function ClientsPage() {
             </div>
           </form>
         </section>
+        </ModalDialog>
       )}
 
       <section className="clients-toolbar" aria-label="Filtros de clientes">
@@ -419,6 +436,13 @@ export function ClientsPage() {
       )}
 
       {clientToArchive && (
+        <ModalDialog
+          className="confirmation-modal"
+          labelledBy="archive-title"
+          onRequestClose={() => {
+            if (actionClientId !== clientToArchive.id) setClientToArchive(null);
+          }}
+        >
         <section className="archive-confirmation" aria-labelledby="archive-title">
           <div>
             <h2 id="archive-title">¿Archivar a {clientToArchive.name}?</h2>
@@ -442,9 +466,17 @@ export function ClientsPage() {
             </button>
           </div>
         </section>
+        </ModalDialog>
       )}
 
       {clientToDelete && (
+        <ModalDialog
+          className="confirmation-modal"
+          labelledBy="delete-title"
+          onRequestClose={() => {
+            if (actionClientId !== clientToDelete.id) setClientToDelete(null);
+          }}
+        >
         <section className="archive-confirmation" aria-labelledby="delete-title">
           <div>
             <h2 id="delete-title">¿Eliminar definitivamente a {clientToDelete.name}?</h2>
@@ -470,6 +502,7 @@ export function ClientsPage() {
             </button>
           </div>
         </section>
+        </ModalDialog>
       )}
 
       {isLoading && <div className="loading-state">Cargando clientes...</div>}

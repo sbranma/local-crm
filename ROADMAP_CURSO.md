@@ -259,8 +259,10 @@ Construir el módulo con mayor concentración de reglas de negocio del MVP.
 - Agregar, editar y eliminar conceptos.
 - Manejar cantidades, precios e impuestos configurables.
 - Calcular subtotal, impuestos y total.
-- Estados: borrador, enviada, aceptada y rechazada.
-- Vista presentable para compartir o imprimir.
+- Estados: borrador, enviada, aceptada, rechazada y vencida.
+- Historial con búsqueda y filtros por estado y fechas.
+- Datos y logotipo configurables del negocio.
+- PDF presentable para guardar, compartir o imprimir.
 
 ### Aprendizajes
 

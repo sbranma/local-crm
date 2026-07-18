@@ -192,7 +192,7 @@ pub fn delete_client(state: State<'_, DatabaseState>, id: i64) -> Result<(), Str
         .map_err(|error| {
             if let rusqlite::Error::SqliteFailure(sqlite_error, _) = &error {
                 if sqlite_error.code == rusqlite::ErrorCode::ConstraintViolation {
-                    return "No se puede eliminar el cliente porque tiene tareas relacionadas."
+                    return "No se puede eliminar el cliente porque tiene tareas o cotizaciones relacionadas."
                         .to_owned();
                 }
             }

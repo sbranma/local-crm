@@ -1,5 +1,8 @@
 mod clients;
 mod database;
+mod pdf_export;
+mod quotes;
+mod settings;
 mod tasks;
 
 use rusqlite::Connection;
@@ -13,6 +16,7 @@ pub(crate) struct DatabaseState {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let database_path = app.path().app_data_dir()?.join("local-crm.sqlite3");
 
@@ -35,7 +39,16 @@ pub fn run() {
             tasks::list_tasks,
             tasks::update_task,
             tasks::set_task_status,
-            tasks::delete_task
+            tasks::delete_task,
+            settings::get_business_settings,
+            settings::update_business_settings,
+            quotes::create_quote,
+            quotes::list_quotes,
+            quotes::get_quote,
+            quotes::update_quote,
+            quotes::set_quote_status,
+            quotes::delete_quote,
+            pdf_export::save_quote_pdf
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

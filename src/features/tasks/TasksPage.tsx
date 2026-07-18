@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { ModalDialog } from "../../components/ModalDialog";
 import { listClients } from "../clients/client.api";
 import type { Client } from "../clients/client.types";
 import {
@@ -73,6 +74,7 @@ export function TasksPage() {
   const [formValues, setFormValues] = useState<TaskFormValues>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<TaskFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
   const [actionTaskId, setActionTaskId] = useState<number | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
@@ -152,6 +154,7 @@ export function TasksPage() {
   function openCreateForm() {
     setFormMode({ type: "create" });
     setFormValues(EMPTY_FORM);
+    setIsFormDirty(false);
     setFormErrors({});
     clearFeedback();
   }
@@ -166,6 +169,7 @@ export function TasksPage() {
       status: task.status,
       scheduledAt: isoToLocalInput(task.scheduledAt),
     });
+    setIsFormDirty(false);
     setFormErrors({});
     clearFeedback();
   }
@@ -175,9 +179,14 @@ export function TasksPage() {
       return;
     }
 
+    if (isFormDirty && !window.confirm("¿Descartar los cambios sin guardar?")) {
+      return;
+    }
+
     setFormMode(null);
     setFormValues(EMPTY_FORM);
     setFormErrors({});
+    setIsFormDirty(false);
   }
 
   function updateFormField<K extends keyof TaskFormValues>(
@@ -185,6 +194,7 @@ export function TasksPage() {
     value: TaskFormValues[K],
   ) {
     setFormValues((current) => ({ ...current, [field]: value }));
+    setIsFormDirty(true);
 
     if (field in formErrors) {
       setFormErrors((current) => ({ ...current, [field]: undefined }));
@@ -220,6 +230,7 @@ export function TasksPage() {
       setFormMode(null);
       setFormValues(EMPTY_FORM);
       setFormErrors({});
+      setIsFormDirty(false);
     } catch (error: unknown) {
       setPageError(getErrorMessage(error, "No se pudo guardar la tarea."));
     } finally {
@@ -328,6 +339,11 @@ export function TasksPage() {
       </section>
 
       {formMode && (
+        <ModalDialog
+          className="form-modal"
+          labelledBy="task-form-title"
+          onRequestClose={closeForm}
+        >
         <section className="client-form-card" aria-labelledby="task-form-title">
           <div className="client-form-header">
             <div>
@@ -447,6 +463,7 @@ export function TasksPage() {
             </div>
           </form>
         </section>
+        </ModalDialog>
       )}
 
       <section className="clients-toolbar tasks-toolbar" aria-label="Filtros de tareas">
@@ -497,6 +514,13 @@ export function TasksPage() {
       </p>
 
       {taskToDelete && (
+        <ModalDialog
+          className="confirmation-modal"
+          labelledBy="delete-task-title"
+          onRequestClose={() => {
+            if (actionTaskId !== taskToDelete.id) setTaskToDelete(null);
+          }}
+        >
         <section className="archive-confirmation" aria-labelledby="delete-task-title">
           <div>
             <h2 id="delete-task-title">¿Eliminar “{taskToDelete.title}”?</h2>
@@ -520,6 +544,7 @@ export function TasksPage() {
             </button>
           </div>
         </section>
+        </ModalDialog>
       )}
 
       {isLoading && <div className="loading-state">Cargando tareas...</div>}

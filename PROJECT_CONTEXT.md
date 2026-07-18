@@ -65,13 +65,16 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 - Crear cotizaciones asociadas a un cliente.
 - Agregar conceptos, cantidades, precios e impuestos configurables.
 - Calcular subtotales y totales de forma confiable.
-- Manejar estados básicos, por ejemplo borrador, enviada, aceptada o rechazada.
-- Preparar una salida presentable para compartir o imprimir.
+- Manejar estados borrador, enviada, aceptada, rechazada y vencida.
+- Mantener un historial filtrable por cliente, número, estado y fechas.
+- Permitir editar y eliminar solo borradores; las cotizaciones emitidas se conservan como historial y pueden duplicarse.
+- Generar y guardar un PDF presentable, incluso sin conexión.
 
 ### Configuración del negocio
 
 - Datos generales del negocio usados en la aplicación y en documentos.
 - Preferencias básicas, moneda e impuestos cuando corresponda.
+- Logotipo local PNG, JPG o WebP validado antes de guardarse y reutilizado en los PDF.
 - Configuración local comprensible y fácil de modificar.
 
 ### Backups
