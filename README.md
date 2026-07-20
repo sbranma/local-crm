@@ -50,4 +50,10 @@ Antes de restaurar, la aplicación comprueba la firma SQLite, la versión del es
 
 Los archivos `.localcrm` son bases SQLite completas que empaquetan temporalmente el contenido binario de los documentos junto con sus metadatos. Tanto la carpeta activa de documentos como los respaldos contienen información privada y actualmente **no están cifrados**, por lo que deben guardarse en una ubicación segura.
 
+## Distribución para Windows
+
+La identidad de la aplicación parte de un SVG local y Tauri genera los tamaños PNG y el archivo ICO usados por Windows. El paquete está configurado para producir un instalador NSIS con los metadatos de Local CRM.
+
+La versión compilada usa una política de seguridad de contenido que limita la interfaz a recursos locales, el canal IPC de Tauri y las imágenes embebidas necesarias para logotipos. La capacidad del plugin de diálogos permite únicamente abrir y guardar archivos mediante ventanas nativas. La política de desarrollo permanece separada para que Vite pueda ejecutarse localmente.
+
 Consulta `PROJECT_CONTEXT.md` para el alcance y las decisiones principales del producto, y `ROADMAP_CURSO.md` para el orden de implementación.

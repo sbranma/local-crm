@@ -177,6 +177,13 @@ Esta división es una guía, no una invitación a crear complejidad innecesaria.
 - Definir una estrategia de respaldo, restauración y migración antes de considerar el producto listo para uso real.
 - No afirmar que la aplicación ofrece cifrado, autenticación o protección que aún no haya sido implementada y comprobada.
 
+Medidas implementadas para la distribución de escritorio:
+
+- Política CSP de producción limitada a recursos locales, IPC de Tauri e imágenes embebidas necesarias para logotipos.
+- CSP de desarrollo separada para permitir el servidor local y la recarga de Vite sin debilitar el ejecutable publicado.
+- Capacidades de plugins limitadas a abrir y guardar mediante los diálogos nativos que usa la interfaz.
+- Icono de marca versionado como SVG y convertido localmente a los formatos requeridos por Tauri.
+
 ## Experiencia de usuario
 
 - Diseñar para usuarios no técnicos.

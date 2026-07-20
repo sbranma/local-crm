@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
+
 export type UiIconName =
+  | "brand"
   | "dashboard"
   | "clients"
   | "tasks"
@@ -17,6 +20,7 @@ type UiIconProps = {
 };
 
 const paths: Record<UiIconName, ReactNode> = {
+  brand: <><path fill="currentColor" stroke="none" d="M9 5.5h6v2H9zM5.5 9h2v6h-2zM16.5 9h2v6h-2zM9 16.5h6v2H9z" /><rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor" stroke="none" /><rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor" stroke="none" /><rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor" stroke="none" /><rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor" stroke="none" /></>,
   dashboard: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></>,
   clients: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></>,
   tasks: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></>,
@@ -48,4 +52,3 @@ export function UiIcon({ name, size = 20 }: UiIconProps) {
     </svg>
   );
 }
-import type { ReactNode } from "react";

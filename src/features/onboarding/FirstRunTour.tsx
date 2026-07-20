@@ -111,7 +111,7 @@ export function FirstRunTour({ onComplete }: FirstRunTourProps) {
     >
       <section className="onboarding-card">
         <header className="onboarding-header">
-          <div className="onboarding-brand"><UiIcon name="dashboard" size={22} /><span>Local CRM</span></div>
+          <div className="onboarding-brand"><UiIcon name="brand" size={22} /><span>Local CRM</span></div>
           <button className="onboarding-skip" type="button" disabled={isSeeding} onClick={() => setIsOpen(false)}>
             Ver después
           </button>

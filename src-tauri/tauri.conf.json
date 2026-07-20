@@ -21,12 +21,18 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-src 'none'; form-action 'self'",
+      "devCsp": null
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
+    "publisher": "Local CRM",
+    "copyright": "Copyright © 2026 Local CRM contributors",
+    "category": "Business",
+    "shortDescription": "CRM local para pequeños negocios y profesionales independientes.",
+    "longDescription": "Aplicación de escritorio para administrar clientes, tareas, agenda, cotizaciones, inventario, documentos y respaldos sin depender de un servidor externo.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
