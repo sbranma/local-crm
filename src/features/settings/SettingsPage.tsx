@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { ModalDialog } from "../../components/ModalDialog";
+import { exportBackup, inspectBackup, restoreBackup } from "./backup.api";
+import type { RestoreCandidate } from "./backup.types";
 import { getBusinessSettings, updateBusinessSettings } from "./settings.api";
 import type {
   BusinessSettings,
@@ -38,6 +42,7 @@ const EMPTY_FORM: SettingsFormValues = {
 
 const ACCEPTED_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+const RESTORE_SUCCESS_KEY = "local-crm-restore-success";
 
 export function SettingsPage() {
   const [storedSettings, setStoredSettings] = useState<BusinessSettings | null>(null);
@@ -47,12 +52,21 @@ export function SettingsPage() {
   const [removeLogo, setRemoveLogo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBackupWorking, setIsBackupWorking] = useState(false);
+  const [restoreCandidate, setRestoreCandidate] = useState<RestoreCandidate | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let isCurrent = true;
+
+    const restoredBackup = sessionStorage.getItem(RESTORE_SUCCESS_KEY);
+    if (restoredBackup) {
+      sessionStorage.removeItem(RESTORE_SUCCESS_KEY);
+      setSuccessMessage(restoredBackup);
+    }
 
     async function loadSettings() {
       try {
@@ -176,6 +190,67 @@ export function SettingsPage() {
       setPageError(getErrorMessage(error, "No se pudo guardar la configuración."));
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleExportBackup() {
+    const destinationPath = await save({
+      defaultPath: backupFileName(),
+      filters: [{ name: "Respaldo de Local CRM", extensions: ["localcrm"] }],
+    });
+    if (!destinationPath) return;
+
+    setIsBackupWorking(true);
+    setPageError(null);
+    setSuccessMessage(null);
+    try {
+      const backup = await exportBackup(destinationPath);
+      setSuccessMessage(
+        `Respaldo “${backup.fileName}” creado correctamente (${formatFileSize(backup.sizeBytes)}).`,
+      );
+    } catch (error: unknown) {
+      setPageError(getErrorMessage(error, "No se pudo crear el respaldo."));
+    } finally {
+      setIsBackupWorking(false);
+    }
+  }
+
+  async function handleSelectBackup() {
+    const sourcePath = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: "Respaldo de Local CRM", extensions: ["localcrm"] }],
+    });
+    if (typeof sourcePath !== "string") return;
+
+    setIsBackupWorking(true);
+    setPageError(null);
+    setSuccessMessage(null);
+    setRestoreError(null);
+    try {
+      const info = await inspectBackup(sourcePath);
+      setRestoreCandidate({ path: sourcePath, info });
+    } catch (error: unknown) {
+      setPageError(getErrorMessage(error, "El archivo seleccionado no es un respaldo válido."));
+    } finally {
+      setIsBackupWorking(false);
+    }
+  }
+
+  async function handleRestoreConfirmed() {
+    if (!restoreCandidate) return;
+    setIsBackupWorking(true);
+    setRestoreError(null);
+    try {
+      const result = await restoreBackup(restoreCandidate.path);
+      sessionStorage.setItem(
+        RESTORE_SUCCESS_KEY,
+        `Respaldo “${result.restoredBackup.fileName}” restaurado correctamente. La copia automática del estado anterior quedó en ${result.safetyBackupPath}`,
+      );
+      window.location.reload();
+    } catch (error: unknown) {
+      setRestoreError(getErrorMessage(error, "No se pudo restaurar el respaldo."));
+      setIsBackupWorking(false);
     }
   }
 
@@ -356,6 +431,54 @@ export function SettingsPage() {
           </div>
         </section>
 
+        <section className="settings-card settings-backups">
+          <div className="settings-card-header">
+            <p className="eyebrow">Protección de datos</p>
+            <h2>Respaldos</h2>
+            <p className="page-description">
+              Guarda o recupera toda la información local del CRM en un solo archivo.
+            </p>
+          </div>
+
+          <div className="backup-actions-grid">
+            <article className="backup-action-card">
+              <span className="backup-action-icon" aria-hidden="true">↓</span>
+              <div>
+                <h3>Crear respaldo</h3>
+                <p>Incluye clientes, tareas, agenda, cotizaciones, inventario, configuración y logotipo.</p>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={isBackupWorking}
+                  onClick={() => void handleExportBackup()}
+                >
+                  {isBackupWorking ? "Procesando..." : "Guardar respaldo"}
+                </button>
+              </div>
+            </article>
+
+            <article className="backup-action-card restore">
+              <span className="backup-action-icon" aria-hidden="true">↻</span>
+              <div>
+                <h3>Restaurar respaldo</h3>
+                <p>Primero validaremos el archivo y te mostraremos su contenido antes de reemplazar datos.</p>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={isBackupWorking}
+                  onClick={() => void handleSelectBackup()}
+                >
+                  {isBackupWorking ? "Validando..." : "Seleccionar respaldo"}
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <p className="backup-help">
+            El respaldo contiene únicamente los datos ya guardados y usa la extensión <strong>.localcrm</strong>.
+          </p>
+        </section>
+
         <div className="settings-save-bar">
           <p>Las cotizaciones nuevas usarán estos datos.</p>
           <button className="primary-button" type="submit" disabled={isSaving}>
@@ -363,6 +486,62 @@ export function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {restoreCandidate && (
+        <ModalDialog
+          className="confirmation-modal backup-confirmation-modal"
+          labelledBy="backup-restore-title"
+          onRequestClose={() => {
+            if (!isBackupWorking) setRestoreCandidate(null);
+          }}
+        >
+          <section className="backup-restore-confirmation" aria-labelledby="backup-restore-title">
+            <div className="client-form-header">
+              <div>
+                <p className="eyebrow">Respaldo validado</p>
+                <h2 id="backup-restore-title">¿Restaurar “{restoreCandidate.info.fileName}”?</h2>
+              </div>
+            </div>
+
+            {restoreError && <div className="feedback-banner error" role="alert">{restoreError}</div>}
+
+            <div className="backup-preview-grid">
+              <BackupMetric label="Negocio" value={restoreCandidate.info.businessName ?? "Sin configurar"} />
+              <BackupMetric label="Tamaño" value={formatFileSize(restoreCandidate.info.sizeBytes)} />
+              <BackupMetric label="Clientes" value={String(restoreCandidate.info.clientCount)} />
+              <BackupMetric label="Tareas" value={String(restoreCandidate.info.taskCount)} />
+              <BackupMetric label="Cotizaciones" value={String(restoreCandidate.info.quoteCount)} />
+              <BackupMetric label="Eventos" value={String(restoreCandidate.info.calendarEventCount)} />
+              <BackupMetric label="Inventario" value={String(restoreCandidate.info.inventoryItemCount)} />
+              <BackupMetric label="Versión" value={String(restoreCandidate.info.schemaVersion)} />
+            </div>
+
+            <div className="backup-warning" role="alert">
+              <strong>Esta acción reemplazará todos los datos actuales.</strong>
+              <p>Los cambios sin guardar se perderán. Antes de restaurar crearemos automáticamente una copia del estado actual.</p>
+            </div>
+
+            <div className="confirmation-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={isBackupWorking}
+                onClick={() => setRestoreCandidate(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                disabled={isBackupWorking}
+                onClick={() => void handleRestoreConfirmed()}
+              >
+                {isBackupWorking ? "Restaurando..." : "Sí, reemplazar y restaurar"}
+              </button>
+            </div>
+          </section>
+        </ModalDialog>
+      )}
     </section>
   );
 }
@@ -376,6 +555,15 @@ type SettingsFieldProps = {
   required?: boolean;
   onChange: (value: string) => void;
 };
+
+function BackupMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
 
 function SettingsField({
   label,
@@ -439,6 +627,20 @@ function toFormValues(settings: BusinessSettings): SettingsFormValues {
 
 function formatPercentage(basisPoints: number): string {
   return String(basisPoints / 100);
+}
+
+function backupFileName(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `local-crm-backup-${year}-${month}-${day}.localcrm`;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function optionalText(value: string): string | null {

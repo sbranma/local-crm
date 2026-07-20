@@ -105,6 +105,10 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 - Validar formato y versión antes de restaurar.
 - Informar claramente qué ocurrirá antes de reemplazar datos.
 - Documentar la ubicación y el formato de los datos locales.
+- Usar un archivo `.localcrm` que contenga una copia SQLite completa y consistente.
+- Mostrar un resumen del contenido antes de confirmar una restauración.
+- Crear una copia automática de los datos actuales antes de reemplazarlos.
+- Recargar la interfaz después de restaurar para evitar estados visuales obsoletos.
 
 ## Fuera del alcance inicial
 

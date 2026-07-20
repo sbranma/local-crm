@@ -1,6 +1,8 @@
 use rusqlite::Connection;
 use std::{fs, path::Path};
 
+pub const CURRENT_SCHEMA_VERSION: i64 = 5;
+
 pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
     if let Some(parent_directory) = database_path.parent() {
         fs::create_dir_all(parent_directory)

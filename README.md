@@ -29,6 +29,14 @@ npm.cmd run typecheck
 npm.cmd run build
 ```
 
-Los datos, eventos y el logotipo se guardan en la base SQLite local de la aplicación. Los PDF se generan sin conexión y el usuario elige su ubicación mediante un diálogo nativo de Windows.
+Los datos, eventos y el logotipo se guardan en la base SQLite local de la aplicación. Los PDF y respaldos se generan sin conexión y el usuario elige su ubicación mediante un diálogo nativo de Windows.
+
+## Datos y respaldos
+
+La base activa se guarda en `%APPDATA%\com.localcrm.desktop\local-crm.sqlite3`. Desde **Configuración → Respaldos** se puede exportar toda la información a un archivo `.localcrm` y restaurarla posteriormente.
+
+Antes de restaurar, la aplicación comprueba la firma SQLite, la versión del esquema, las tablas obligatorias, la integridad interna y las relaciones. También muestra un resumen del contenido y solicita confirmación explícita. Inmediatamente antes de reemplazar los datos crea `%APPDATA%\com.localcrm.desktop\local-crm-before-last-restore.localcrm` como copia automática del estado anterior.
+
+Los archivos `.localcrm` son bases SQLite completas. Contienen información privada del negocio y actualmente **no están cifrados**, por lo que deben guardarse en una ubicación segura.
 
 Consulta `PROJECT_CONTEXT.md` para el alcance y las decisiones principales del producto, y `ROADMAP_CURSO.md` para el orden de implementación.

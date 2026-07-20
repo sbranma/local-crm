@@ -1,3 +1,4 @@
+mod backups;
 mod calendar;
 mod clients;
 mod database;
@@ -8,11 +9,12 @@ mod settings;
 mod tasks;
 
 use rusqlite::Connection;
-use std::sync::Mutex;
+use std::{path::PathBuf, sync::Mutex};
 use tauri::Manager;
 
 pub(crate) struct DatabaseState {
     pub(crate) connection: Mutex<Connection>,
+    pub(crate) database_path: PathBuf,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -27,11 +29,15 @@ pub fn run() {
 
             app.manage(DatabaseState {
                 connection: Mutex::new(connection),
+                database_path,
             });
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            backups::export_backup,
+            backups::inspect_backup,
+            backups::restore_backup,
             clients::create_client,
             clients::list_clients,
             clients::update_client,
