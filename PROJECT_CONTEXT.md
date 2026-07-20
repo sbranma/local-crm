@@ -40,9 +40,13 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 
 ### Dashboard
 
-- Resumen de información relevante.
-- Indicadores simples, como tareas pendientes, clientes recientes y cotizaciones por estado.
-- Accesos rápidos a las acciones frecuentes.
+- Mostrar tareas abiertas y vencidas, agenda activa del día, cotizaciones enviadas y productos con bajo stock.
+- Combinar en una lista los próximos eventos y tareas programadas sin duplicar registros.
+- Reunir alertas accionables de tareas vencidas, cotizaciones vencidas y existencias bajas.
+- Resumir cotizaciones por estado y mostrar su valor como monto cotizado, no como ingreso recibido.
+- Mostrar clientes activos y los registros agregados recientemente.
+- Permitir navegar rápidamente a los módulos relacionados.
+- Obtener el resumen mediante consultas agregadas de SQLite sin cargar todos los registros en React.
 
 ### Clientes
 

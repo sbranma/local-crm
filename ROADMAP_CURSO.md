@@ -332,6 +332,9 @@ Convertir los datos existentes en información útil y permitir configurar el ne
 - Tareas pendientes.
 - Cotizaciones agrupadas por estado.
 - Accesos rápidos a acciones frecuentes.
+- Agenda del día y próximos compromisos.
+- Alertas combinadas de tareas vencidas, cotizaciones vencidas y bajo stock.
+- Consultas agregadas para evitar cargar todos los registros en la interfaz.
 
 ### Aprendizajes
 

@@ -4,7 +4,7 @@ Aplicación de escritorio local para que pequeños negocios administren clientes
 
 ## Estado
 
-El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados. Tareas administra actividades internas o asociadas a clientes. Agenda combina esas tareas programadas con citas, reuniones, llamadas y recordatorios propios, sin duplicar los datos. Cotizaciones mantiene un historial por cliente, calcula importes con enteros, controla estados y genera documentos PDF con los datos y el logotipo configurados para el negocio. Inventario administra un catálogo de productos y servicios, precios, existencias y movimientos auditables, y permite reutilizar el catálogo al preparar cotizaciones.
+El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El Dashboard reúne tareas vencidas, agenda próxima, alertas, actividad comercial y clientes recientes mediante consultas agregadas. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados. Tareas administra actividades internas o asociadas a clientes. Agenda combina esas tareas programadas con citas, reuniones, llamadas y recordatorios propios, sin duplicar los datos. Cotizaciones mantiene un historial por cliente, calcula importes con enteros, controla estados y genera documentos PDF con los datos y el logotipo configurados para el negocio. Inventario administra un catálogo de productos y servicios, precios, existencias y movimientos auditables, y permite reutilizar el catálogo al preparar cotizaciones.
 
 ## Desarrollo
 

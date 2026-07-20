@@ -729,7 +729,7 @@ fn next_quote_number(transaction: &Transaction<'_>, issue_date: &str) -> Result<
     Ok(format!("{prefix}{:04}", last_number + 1))
 }
 
-fn refresh_expired_quotes(connection: &Connection) -> Result<(), String> {
+pub(crate) fn refresh_expired_quotes(connection: &Connection) -> Result<(), String> {
     connection
         .execute(
             "

@@ -1,6 +1,7 @@
 mod backups;
 mod calendar;
 mod clients;
+mod dashboard;
 mod database;
 mod inventory;
 mod pdf_export;
@@ -38,6 +39,7 @@ pub fn run() {
             backups::export_backup,
             backups::inspect_backup,
             backups::restore_backup,
+            dashboard::get_dashboard_summary,
             clients::create_client,
             clients::list_clients,
             clients::update_client,
