@@ -2,13 +2,14 @@ import { useState } from "react";
 import { CalendarPage } from "./features/calendar/CalendarPage";
 import { ClientsPage } from "./features/clients/ClientsPage";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
+import { DocumentsPage } from "./features/documents/DocumentsPage";
 import { InventoryPage } from "./features/inventory/InventoryPage";
 import { QuotesPage } from "./features/quotes/QuotesPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { TasksPage } from "./features/tasks/TasksPage";
 import "./App.css";
 
-const navigationItems = ["Dashboard", "Clientes", "Tareas", "Agenda", "Cotizaciones", "Inventario"] as const;
+const navigationItems = ["Dashboard", "Clientes", "Tareas", "Agenda", "Cotizaciones", "Inventario", "Archivos"] as const;
 
 type AppSection = (typeof navigationItems)[number] | "Configuración";
 
@@ -63,6 +64,7 @@ function App() {
         {activeSection === "Agenda" && <CalendarPage />}
         {activeSection === "Cotizaciones" && <QuotesPage />}
         {activeSection === "Inventario" && <InventoryPage />}
+        {activeSection === "Archivos" && <DocumentsPage />}
         {activeSection === "Configuración" && <SettingsPage />}
       </main>
     </div>

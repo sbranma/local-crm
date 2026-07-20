@@ -445,7 +445,7 @@ export function SettingsPage() {
               <span className="backup-action-icon" aria-hidden="true">↓</span>
               <div>
                 <h3>Crear respaldo</h3>
-                <p>Incluye clientes, tareas, agenda, cotizaciones, inventario, configuración y logotipo.</p>
+                <p>Incluye clientes, tareas, agenda, cotizaciones, inventario, archivos, configuración y logotipo.</p>
                 <button
                   className="secondary-button"
                   type="button"
@@ -513,6 +513,7 @@ export function SettingsPage() {
               <BackupMetric label="Cotizaciones" value={String(restoreCandidate.info.quoteCount)} />
               <BackupMetric label="Eventos" value={String(restoreCandidate.info.calendarEventCount)} />
               <BackupMetric label="Inventario" value={String(restoreCandidate.info.inventoryItemCount)} />
+              <BackupMetric label="Archivos" value={String(restoreCandidate.info.documentCount)} />
               <BackupMetric label="Versión" value={String(restoreCandidate.info.schemaVersion)} />
             </div>
 

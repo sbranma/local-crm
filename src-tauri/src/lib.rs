@@ -3,6 +3,7 @@ mod calendar;
 mod clients;
 mod dashboard;
 mod database;
+mod documents;
 mod inventory;
 mod pdf_export;
 mod quotes;
@@ -16,6 +17,7 @@ use tauri::Manager;
 pub(crate) struct DatabaseState {
     pub(crate) connection: Mutex<Connection>,
     pub(crate) database_path: PathBuf,
+    pub(crate) documents_path: PathBuf,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,6 +26,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let database_path = app.path().app_data_dir()?.join("local-crm.sqlite3");
+            let documents_path = app.path().app_data_dir()?.join("documents");
+
+            std::fs::create_dir_all(&documents_path)?;
 
             let connection =
                 database::initialize_database(&database_path).map_err(std::io::Error::other)?;
@@ -31,6 +36,7 @@ pub fn run() {
             app.manage(DatabaseState {
                 connection: Mutex::new(connection),
                 database_path,
+                documents_path,
             });
 
             Ok(())
@@ -40,6 +46,16 @@ pub fn run() {
             backups::inspect_backup,
             backups::restore_backup,
             dashboard::get_dashboard_summary,
+            documents::list_document_folders,
+            documents::create_document_folder,
+            documents::update_document_folder,
+            documents::delete_document_folder,
+            documents::list_documents,
+            documents::import_document,
+            documents::update_document,
+            documents::open_document,
+            documents::export_document,
+            documents::delete_document,
             clients::create_client,
             clients::list_clients,
             clients::update_client,

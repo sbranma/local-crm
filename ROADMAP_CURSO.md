@@ -401,6 +401,26 @@ Preparar un MVP demostrable, instalable y defendible profesionalmente.
 
 Un pequeño negocio puede instalar Local CRM, configurar sus datos, administrar clientes y tareas, crear cotizaciones y realizar o restaurar respaldos sin depender de un servidor externo.
 
+## Fase 8.5 — Archivos locales
+
+### Objetivo
+
+Conservar contratos y documentos operativos dentro del CRM sin convertir SQLite en un almacén permanente de archivos pesados.
+
+### Construcción
+
+- Carpetas y subcarpetas lógicas persistidas en SQLite.
+- Metadatos y relación opcional con clientes.
+- Copia física privada con nombre interno seguro.
+- Validación de tipo, firma, tamaño y ruta.
+- Búsqueda, filtros, apertura en Windows y exportación.
+- Renombrado, movimiento y eliminación confirmada.
+- Respaldo único que empaqueta temporalmente base y contenido físico.
+
+### Criterio para avanzar
+
+Los documentos sobreviven al reinicio y a una exportación/restauración completa, sin aceptar ejecutables disfrazados mediante una extensión permitida.
+
 ## Orden resumido de entregas
 
 1. Definición del producto.
@@ -414,7 +434,8 @@ Un pequeño negocio puede instalar Local CRM, configurar sus datos, administrar 
 9. Inventario y catálogo.
 10. Dashboard y configuración.
 11. Backups y restauración.
-12. Calidad, instalador y presentación profesional.
+12. Archivos locales.
+13. Calidad, instalador y presentación profesional.
 
 ## Reglas para no perdernos
 

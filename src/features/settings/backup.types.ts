@@ -8,6 +8,7 @@ export type BackupInfo = {
   quoteCount: number;
   calendarEventCount: number;
   inventoryItemCount: number;
+  documentCount: number;
 };
 
 export type RestoreResult = {

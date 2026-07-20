@@ -110,9 +110,22 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 - Informar claramente qué ocurrirá antes de reemplazar datos.
 - Documentar la ubicación y el formato de los datos locales.
 - Usar un archivo `.localcrm` que contenga una copia SQLite completa y consistente.
+- Empaquetar dentro del respaldo los archivos físicos mediante una tabla binaria exclusiva del archivo `.localcrm`; la base activa conserva solo metadatos.
 - Mostrar un resumen del contenido antes de confirmar una restauración.
 - Crear una copia automática de los datos actuales antes de reemplazarlos.
 - Recargar la interfaz después de restaurar para evitar estados visuales obsoletos.
+
+### Archivos — extensión autorizada para V1.1
+
+- Importar PDF, PNG, JPG, WebP, TXT, CSV, DOCX y XLSX de hasta 25 MB.
+- Organizar documentos mediante carpetas y subcarpetas lógicas.
+- Relacionar opcionalmente cada archivo con un cliente activo.
+- Buscar y filtrar por nombre, cliente y tipo dentro de la carpeta actual.
+- Abrir con la aplicación predeterminada de Windows, exportar una copia, renombrar, mover y eliminar con confirmación.
+- Guardar el contenido físico bajo `%APPDATA%\com.localcrm.desktop\documents` con nombres internos generados; SQLite conserva los metadatos y relaciones.
+- Incluir contenido y metadatos en el mismo archivo `.localcrm` durante un respaldo y restaurarlos como una unidad.
+- Validar extensión, firma básica, tamaño y rutas antes de aceptar archivos.
+- Mantener fuera de esta versión vista previa, OCR, versiones, sincronización, permisos y nube.
 
 ## Fuera del alcance inicial
 
@@ -237,4 +250,4 @@ Usar asistencia de IA es compatible con este objetivo siempre que el propietario
 
 ## Criterio general de éxito
 
-El MVP tendrá éxito cuando un pequeño negocio pueda instalar la aplicación en Windows, configurar sus datos, administrar clientes y tareas, crear cotizaciones y realizar o restaurar respaldos de manera confiable, sin depender de un servidor externo para las funciones principales.
+La primera versión tendrá éxito cuando un pequeño negocio pueda instalar la aplicación en Windows, configurar sus datos, administrar clientes, tareas, agenda, cotizaciones, inventario y documentos, y realizar o restaurar respaldos completos de manera confiable, sin depender de un servidor externo para las funciones principales.

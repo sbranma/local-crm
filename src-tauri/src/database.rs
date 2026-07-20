@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::{fs, path::Path};
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 5;
+pub const CURRENT_SCHEMA_VERSION: i64 = 6;
 
 pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
     if let Some(parent_directory) = database_path.parent() {
@@ -240,7 +240,13 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
         )
         .map_err(|error| format!("No se pudo preparar la base de datos: {error}"))?;
 
-    ensure_quote_item_inventory_column(&connection)?;
+    migrate_to_current_schema(&connection)?;
+
+    Ok(connection)
+}
+
+pub(crate) fn migrate_to_current_schema(connection: &Connection) -> Result<(), String> {
+    ensure_quote_item_inventory_column(connection)?;
 
     connection
         .execute_batch(
@@ -248,12 +254,64 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
             CREATE INDEX IF NOT EXISTS idx_quote_items_inventory
                 ON quote_items (inventory_item_id);
 
-            PRAGMA user_version = 5;
+            CREATE TABLE IF NOT EXISTS document_folders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                parent_id INTEGER,
+                name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 100),
+                created_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                updated_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                FOREIGN KEY (parent_id)
+                    REFERENCES document_folders (id) ON DELETE RESTRICT,
+                CHECK (parent_id IS NULL OR parent_id != id)
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_document_folders_root_name
+                ON document_folders (lower(name))
+                WHERE parent_id IS NULL;
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_document_folders_parent_name
+                ON document_folders (parent_id, lower(name))
+                WHERE parent_id IS NOT NULL;
+
+            CREATE TABLE IF NOT EXISTS documents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                folder_id INTEGER,
+                client_id INTEGER,
+                display_name TEXT NOT NULL CHECK (
+                    length(trim(display_name)) BETWEEN 1 AND 180
+                ),
+                stored_name TEXT NOT NULL UNIQUE CHECK (
+                    length(trim(stored_name)) BETWEEN 1 AND 220
+                ),
+                extension TEXT NOT NULL CHECK (length(extension) BETWEEN 1 AND 10),
+                mime_type TEXT NOT NULL CHECK (length(trim(mime_type)) > 0),
+                size_bytes INTEGER NOT NULL CHECK (size_bytes > 0),
+                created_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                updated_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                FOREIGN KEY (folder_id)
+                    REFERENCES document_folders (id) ON DELETE RESTRICT,
+                FOREIGN KEY (client_id)
+                    REFERENCES clients (id) ON DELETE SET NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_documents_folder_name
+                ON documents (folder_id, display_name COLLATE NOCASE);
+
+            CREATE INDEX IF NOT EXISTS idx_documents_client
+                ON documents (client_id);
+
+            PRAGMA user_version = 6;
             ",
         )
-        .map_err(|error| format!("No se pudo finalizar la migración de inventario: {error}"))?;
-
-    Ok(connection)
+        .map_err(|error| format!("No se pudo finalizar la migración local: {error}"))
 }
 
 fn ensure_quote_item_inventory_column(connection: &Connection) -> Result<(), String> {
@@ -287,7 +345,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn creates_the_inventory_schema_at_version_five() {
+    fn creates_the_document_schema_at_version_six() {
         let unique_suffix = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system time should be valid")
@@ -302,13 +360,13 @@ mod tests {
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .expect("the schema version should be readable");
-        let inventory_table_count: i64 = connection
+        let document_table_count: i64 = connection
             .query_row(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'inventory_items'",
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'documents'",
                 [],
                 |row| row.get(0),
             )
-            .expect("the inventory table should be readable");
+            .expect("the documents table should be readable");
         let quote_item_inventory_column: i64 = connection
             .query_row(
                 "SELECT COUNT(*) FROM pragma_table_info('quote_items') WHERE name = 'inventory_item_id'",
@@ -317,8 +375,8 @@ mod tests {
             )
             .expect("the quote item inventory column should be readable");
 
-        assert_eq!(version, 5);
-        assert_eq!(inventory_table_count, 1);
+        assert_eq!(version, 6);
+        assert_eq!(document_table_count, 1);
         assert_eq!(quote_item_inventory_column, 1);
 
         drop(connection);
