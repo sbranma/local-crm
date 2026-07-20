@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { ModalDialog } from "../../components/ModalDialog";
+import { LoadErrorState } from "../../components/LoadErrorState";
 import { exportBackup, inspectBackup, restoreBackup } from "./backup.api";
 import type { RestoreCandidate } from "./backup.types";
 import { getBusinessSettings, updateBusinessSettings } from "./settings.api";
@@ -51,6 +52,8 @@ export function SettingsPage() {
   const [pendingLogo, setPendingLogo] = useState<PendingLogo | null>(null);
   const [removeLogo, setRemoveLogo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isBackupWorking, setIsBackupWorking] = useState(false);
   const [restoreCandidate, setRestoreCandidate] = useState<RestoreCandidate | null>(null);
@@ -69,6 +72,8 @@ export function SettingsPage() {
     }
 
     async function loadSettings() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const settings = await getBusinessSettings();
         if (isCurrent) {
@@ -77,7 +82,7 @@ export function SettingsPage() {
         }
       } catch (error: unknown) {
         if (isCurrent) {
-          setPageError(getErrorMessage(error, "No se pudo cargar la configuración."));
+          setLoadError(getErrorMessage(error, "No se pudo cargar la configuración."));
         }
       } finally {
         if (isCurrent) setIsLoading(false);
@@ -88,7 +93,7 @@ export function SettingsPage() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const logoPreview = useMemo(() => {
     if (pendingLogo) {
@@ -274,6 +279,17 @@ export function SettingsPage() {
 
   if (isLoading) {
     return <div className="loading-state">Cargando configuración...</div>;
+  }
+
+  if (loadError) {
+    return (
+      <section className="settings-page">
+        <header className="page-header">
+          <div><p className="eyebrow">Identidad del documento</p><h1>Configuración</h1><p className="page-description">Administra la información de tu negocio y las copias de seguridad.</p></div>
+        </header>
+        <LoadErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />
+      </section>
+    );
   }
 
   return (

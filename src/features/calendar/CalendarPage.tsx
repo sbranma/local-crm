@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { LoadErrorState } from "../../components/LoadErrorState";
 import { ModalDialog } from "../../components/ModalDialog";
 import { listClients } from "../clients/client.api";
 import type { Client } from "../clients/client.types";
@@ -134,6 +135,8 @@ export function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -155,6 +158,8 @@ export function CalendarPage() {
     let isCurrent = true;
 
     async function loadPageData() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const [storedEvents, storedTasks, storedClients] = await Promise.all([
           listCalendarEvents(),
@@ -169,7 +174,7 @@ export function CalendarPage() {
         }
       } catch (error: unknown) {
         if (isCurrent) {
-          setPageError(getErrorMessage(error, "No se pudo cargar la agenda."));
+          setLoadError(getErrorMessage(error, "No se pudo cargar la agenda."));
         }
       } finally {
         if (isCurrent) setIsLoading(false);
@@ -180,7 +185,7 @@ export function CalendarPage() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const calendarItems = useMemo<CalendarItem[]>(() => {
     const taskItems: CalendarItem[] = tasks
@@ -505,7 +510,7 @@ export function CalendarPage() {
             Consulta tareas programadas y organiza citas, reuniones y recordatorios.
           </p>
         </div>
-        <button className="primary-button" type="button" onClick={openCreateEvent}>
+        <button className="primary-button" type="button" disabled={Boolean(loadError)} onClick={openCreateEvent}>
           Nuevo evento
         </button>
       </header>
@@ -514,8 +519,9 @@ export function CalendarPage() {
       {successMessage && (
         <div className="feedback-banner success" role="status">{successMessage}</div>
       )}
+      {loadError && <LoadErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
 
-      <section className="calendar-toolbar" aria-label="Controles de agenda">
+      {!loadError && <section className="calendar-toolbar" aria-label="Controles de agenda">
         <div className="calendar-navigation">
           <button className="secondary-button calendar-arrow" type="button" onClick={() => movePeriod(-1)} aria-label="Periodo anterior">‹</button>
           <button className="secondary-button" type="button" onClick={goToToday}>Hoy</button>
@@ -536,9 +542,9 @@ export function CalendarPage() {
             </button>
           ))}
         </div>
-      </section>
+      </section>}
 
-      <section className="calendar-filters" aria-label="Filtros de agenda">
+      {!loadError && <section className="calendar-filters" aria-label="Filtros de agenda">
         <label className="calendar-search">
           <span className="sr-only">Buscar en agenda</span>
           <input
@@ -587,11 +593,12 @@ export function CalendarPage() {
             ))}
           </select>
         </label>
-      </section>
+        {(searchTerm || typeFilter !== "all" || statusFilter !== "all" || priorityFilter !== "all" || clientFilter !== "all") && <button className="filter-reset-button" type="button" onClick={() => { setSearchTerm(""); setTypeFilter("all"); setStatusFilter("all"); setPriorityFilter("all"); setClientFilter("all"); }}>Limpiar filtros</button>}
+      </section>}
 
       {isLoading && <div className="loading-state">Cargando agenda...</div>}
 
-      {!isLoading && (
+      {!isLoading && !loadError && (
         <div className={view === "day" ? "calendar-workspace calendar-workspace-day" : "calendar-workspace"}>
           <section className="calendar-board" aria-label={`Vista de ${view === "month" ? "mes" : view === "week" ? "semana" : "día"}`}>
             {view === "month" && (

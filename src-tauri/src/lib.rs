@@ -3,6 +3,7 @@ mod calendar;
 mod clients;
 mod dashboard;
 mod database;
+mod demo;
 mod documents;
 mod inventory;
 mod pdf_export;
@@ -46,6 +47,8 @@ pub fn run() {
             backups::inspect_backup,
             backups::restore_backup,
             dashboard::get_dashboard_summary,
+            demo::get_onboarding_status,
+            demo::seed_demo_data,
             documents::list_document_folders,
             documents::create_document_folder,
             documents::update_document_folder,

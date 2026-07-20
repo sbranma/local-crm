@@ -4,7 +4,18 @@ Aplicación de escritorio local para que pequeños negocios administren clientes
 
 ## Estado
 
-El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El Dashboard reúne tareas vencidas, agenda próxima, alertas, actividad comercial y clientes recientes mediante consultas agregadas. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados. Tareas administra actividades internas o asociadas a clientes. Agenda combina esas tareas programadas con citas, reuniones, llamadas y recordatorios propios, sin duplicar los datos. Cotizaciones mantiene un historial por cliente, calcula importes con enteros, controla estados y genera documentos PDF con los datos y el logotipo configurados para el negocio. Inventario administra un catálogo de productos y servicios, precios, existencias y movimientos auditables, y permite reutilizar el catálogo al preparar cotizaciones. Archivos organiza documentos privados en carpetas, permite asociarlos con clientes y abrirlos o exportarlos desde la aplicación.
+El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El Dashboard reúne tareas vencidas, agenda próxima, alertas, actividad comercial y clientes recientes mediante consultas agregadas, y guía la configuración inicial con una lista de primeros pasos. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados. Tareas administra actividades internas o asociadas a clientes. Agenda combina esas tareas programadas con citas, reuniones, llamadas y recordatorios propios, sin duplicar los datos. Cotizaciones mantiene un historial por cliente, calcula importes con enteros, controla estados y genera documentos PDF con los datos y el logotipo configurados para el negocio. Inventario administra un catálogo de productos y servicios, precios, existencias y movimientos auditables, y permite reutilizar el catálogo al preparar cotizaciones. Archivos organiza documentos privados en carpetas, permite asociarlos con clientes y abrirlos o exportarlos desde la aplicación. La interfaz agrupa la navegación por contexto, adapta la barra lateral a ventanas angostas y separa claramente los estados vacíos de los errores de carga.
+
+## Primera ejecución y demostración
+
+Al abrir una instalación nueva, un recorrido de cuatro pasos explica el flujo principal, dónde se guardan los datos y cómo funcionan los respaldos. Si la base está completamente vacía, el usuario puede empezar desde cero o cargar un conjunto ficticio relacionado que incluye:
+
+- Un negocio de demostración y tres clientes.
+- Tres tareas y dos eventos próximos.
+- Cuatro productos o servicios con movimientos de inventario.
+- Una cotización enviada con conceptos del catálogo.
+
+Los ejemplos están identificados mediante nombres y notas de demostración y utilizan correos `example.invalid`. La carga se realiza dentro de una transacción de SQLite y se rechaza si ya existe información, por lo que nunca mezcla ejemplos con datos del usuario. No se agregan archivos físicos de demostración.
 
 ## Desarrollo
 

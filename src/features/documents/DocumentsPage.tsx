@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { open, save } from "@tauri-apps/plugin-dialog";
+import { ActionMenu } from "../../components/ActionMenu";
+import { LoadErrorState } from "../../components/LoadErrorState";
 import { ModalDialog } from "../../components/ModalDialog";
 import { listClients } from "../clients/client.api";
 import type { Client } from "../clients/client.types";
@@ -46,16 +48,18 @@ export function DocumentsPage() {
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [reloadKey]);
 
   async function loadData() {
     setIsLoading(true);
-    setPageError(null);
+    setLoadError(null);
     try {
       const [loadedFolders, loadedDocuments, loadedClients] = await Promise.all([
         listDocumentFolders(),
@@ -66,7 +70,7 @@ export function DocumentsPage() {
       setDocuments(loadedDocuments);
       setClients(loadedClients.filter((client) => !client.isArchived));
     } catch (error: unknown) {
-      setPageError(getErrorMessage(error, "No se pudieron cargar los archivos."));
+      setLoadError(getErrorMessage(error, "No se pudieron cargar los archivos."));
     } finally {
       setIsLoading(false);
     }
@@ -245,8 +249,9 @@ export function DocumentsPage() {
           <p className="page-description">Organiza contratos, comprobantes y documentos del negocio sin subirlos a internet.</p>
         </div>
         <div className="page-header-actions">
-          <button className="secondary-button" type="button" onClick={openCreateFolder}>Nueva carpeta</button>
-          <button className="primary-button" type="button" disabled={isWorking} onClick={() => void handleImport()}>
+          <span className="local-storage-badge">Solo en este equipo</span>
+          <button className="secondary-button" type="button" disabled={Boolean(loadError)} onClick={openCreateFolder}>Nueva carpeta</button>
+          <button className="primary-button" type="button" disabled={isWorking || Boolean(loadError)} onClick={() => void handleImport()}>
             {isWorking ? "Procesando..." : "Importar archivos"}
           </button>
         </div>
@@ -254,15 +259,15 @@ export function DocumentsPage() {
 
       {pageError && <div className="feedback-banner error" role="alert">{pageError}</div>}
       {successMessage && <div className="feedback-banner success" role="status">{successMessage}</div>}
+      {loadError && <LoadErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
 
-      <section className="documents-summary" aria-label="Resumen de archivos">
+      {!loadError && <section className="documents-summary" aria-label="Resumen de archivos">
         <div><span>Archivos guardados</span><strong>{documents.length}</strong></div>
         <div><span>Carpetas</span><strong>{folders.length}</strong></div>
         <div><span>Espacio utilizado</span><strong>{formatFileSize(totalSize)}</strong></div>
-        <div><span>Ubicación</span><strong>Solo este equipo</strong></div>
-      </section>
+      </section>}
 
-      <nav className="documents-breadcrumbs" aria-label="Ruta actual">
+      {!loadError && <nav className="documents-breadcrumbs" aria-label="Ruta actual">
         <button type="button" className={currentFolderId === null ? "active" : undefined} onClick={() => setCurrentFolderId(null)}>Archivos</button>
         {breadcrumbs.map((folder) => (
           <span key={folder.id}>
@@ -270,17 +275,18 @@ export function DocumentsPage() {
             <button type="button" className={folder.id === currentFolderId ? "active" : undefined} onClick={() => setCurrentFolderId(folder.id)}>{folder.name}</button>
           </span>
         ))}
-      </nav>
+      </nav>}
 
-      <section className="documents-toolbar" aria-label="Filtros de archivos">
+      {!loadError && <section className="documents-toolbar" aria-label="Filtros de archivos">
         <label className="search-field"><span>Buscar</span><input type="search" placeholder="Nombre o cliente..." value={search} onChange={(event) => setSearch(event.currentTarget.value)} /></label>
         <label><span>Cliente</span><select value={clientFilter} onChange={(event) => setClientFilter(event.currentTarget.value)}><option value="all">Todos</option><option value="none">Sin cliente</option>{clients.map((client) => <option value={client.id} key={client.id}>{client.name}</option>)}</select></label>
         <label><span>Tipo</span><select value={typeFilter} onChange={(event) => setTypeFilter(event.currentTarget.value as FileTypeFilter)}><option value="all">Todos</option><option value="pdf">PDF</option><option value="image">Imágenes</option><option value="office">Word y Excel</option><option value="text">Texto y CSV</option></select></label>
-      </section>
+        {(search || clientFilter !== "all" || typeFilter !== "all") && <button className="filter-reset-button" type="button" onClick={() => { setSearch(""); setClientFilter("all"); setTypeFilter("all"); }}>Limpiar filtros</button>}
+      </section>}
 
       {isLoading && <div className="loading-state">Cargando archivos...</div>}
 
-      {!isLoading && currentFolders.length > 0 && (
+      {!isLoading && !loadError && currentFolders.length > 0 && (
         <section className="folder-grid" aria-label="Carpetas">
           {currentFolders.map((folder) => {
             const fileCount = documents.filter((document) => document.folderId === folder.id).length;
@@ -290,17 +296,14 @@ export function DocumentsPage() {
                   <span className="folder-icon" aria-hidden="true">▰</span>
                   <span><strong>{folder.name}</strong><small>{fileCount} {fileCount === 1 ? "archivo" : "archivos"}</small></span>
                 </button>
-                <div className="folder-actions">
-                  <button className="text-button" type="button" onClick={() => openEditFolder(folder)}>Editar</button>
-                  <button className="text-button danger-text" type="button" onClick={() => setPendingDelete({ type: "folder", item: folder })}>Eliminar</button>
-                </div>
+                <ActionMenu label={`Acciones de ${folder.name}`}><button type="button" onClick={() => openEditFolder(folder)}>Editar carpeta</button><button className="danger-text" type="button" onClick={() => setPendingDelete({ type: "folder", item: folder })}>Eliminar carpeta</button></ActionMenu>
               </article>
             );
           })}
         </section>
       )}
 
-      {!isLoading && currentFolders.length === 0 && visibleDocuments.length === 0 && (
+      {!isLoading && !loadError && currentFolders.length === 0 && visibleDocuments.length === 0 && (
         <section className="empty-state clients-empty-state documents-empty-state">
           <div className="empty-state-icon" aria-hidden="true">+</div>
           <p className="eyebrow">Carpeta vacía</p>
@@ -310,7 +313,7 @@ export function DocumentsPage() {
         </section>
       )}
 
-      {!isLoading && visibleDocuments.length > 0 && (
+      {!isLoading && !loadError && visibleDocuments.length > 0 && (
         <div className="clients-table-card documents-table-card">
           <table className="clients-table documents-table">
             <thead><tr><th>Archivo</th><th>Cliente</th><th>Tamaño</th><th>Actualizado</th><th className="actions-column">Acciones</th></tr></thead>
@@ -320,7 +323,7 @@ export function DocumentsPage() {
                 <td>{document.clientName ?? <span className="client-secondary">Sin cliente</span>}</td>
                 <td>{formatFileSize(document.sizeBytes)}</td>
                 <td>{dateFormatter.format(new Date(document.updatedAt))}</td>
-                <td><div className="row-actions document-row-actions"><button className="text-button" type="button" onClick={() => void handleOpen(document)}>Abrir</button><button className="text-button" type="button" onClick={() => openDocumentEditor(document)}>Editar</button><button className="text-button" type="button" onClick={() => void handleExport(document)}>Exportar</button><button className="text-button danger-text" type="button" onClick={() => setPendingDelete({ type: "document", item: document })}>Eliminar</button></div></td>
+                <td><div className="row-actions document-row-actions compact-row-actions"><button className="text-button" type="button" onClick={() => void handleOpen(document)}>Abrir</button><ActionMenu><button type="button" onClick={() => openDocumentEditor(document)}>Editar datos</button><button type="button" onClick={() => void handleExport(document)}>Exportar copia</button><button className="danger-text" type="button" onClick={() => setPendingDelete({ type: "document", item: document })}>Eliminar archivo</button></ActionMenu></div></td>
               </tr>
             ))}</tbody>
           </table>

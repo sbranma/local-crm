@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { ActionMenu } from "../../components/ActionMenu";
+import { LoadErrorState } from "../../components/LoadErrorState";
 import { ModalDialog } from "../../components/ModalDialog";
 import {
   createClient,
@@ -42,6 +44,8 @@ const dateFormatter = new Intl.DateTimeFormat("es-CR", {
 export function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,6 +65,8 @@ export function ClientsPage() {
     let isCurrent = true;
 
     async function loadClients() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const storedClients = await listClients();
 
@@ -69,7 +75,7 @@ export function ClientsPage() {
         }
       } catch (error: unknown) {
         if (isCurrent) {
-          setPageError(getErrorMessage(error, "No se pudieron cargar los clientes."));
+          setLoadError(getErrorMessage(error, "No se pudieron cargar los clientes."));
         }
       } finally {
         if (isCurrent) {
@@ -83,7 +89,7 @@ export function ClientsPage() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const activeClientCount = clients.filter((client) => !client.isArchived).length;
   const archivedClientCount = clients.length - activeClientCount;
@@ -290,7 +296,7 @@ export function ClientsPage() {
           </p>
         </div>
 
-        <button className="primary-button" type="button" onClick={openCreateForm}>
+        <button className="primary-button" type="button" disabled={Boolean(loadError)} onClick={openCreateForm}>
           Nuevo cliente
         </button>
       </header>
@@ -306,6 +312,8 @@ export function ClientsPage() {
           {successMessage}
         </div>
       )}
+
+      {loadError && <LoadErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
 
       {formMode && (
         <ModalDialog
@@ -398,7 +406,7 @@ export function ClientsPage() {
         </ModalDialog>
       )}
 
-      <section className="clients-toolbar" aria-label="Filtros de clientes">
+      {!loadError && <section className="clients-toolbar" aria-label="Filtros de clientes">
         <label className="client-search">
           <span className="sr-only">Buscar clientes</span>
           <input
@@ -427,9 +435,10 @@ export function ClientsPage() {
             Archivados <span>{archivedClientCount}</span>
           </button>
         </div>
-      </section>
+        {searchTerm && <button className="filter-reset-button" type="button" onClick={() => setSearchTerm("")}>Limpiar</button>}
+      </section>}
 
-      {!isLoading && (
+      {!isLoading && !loadError && (
         <p className="clients-result-count">
           {visibleClients.length} de {selectedStatusCount} clientes
         </p>
@@ -507,7 +516,7 @@ export function ClientsPage() {
 
       {isLoading && <div className="loading-state">Cargando clientes...</div>}
 
-      {!isLoading && selectedStatusCount === 0 && (
+      {!isLoading && !loadError && selectedStatusCount === 0 && (
         <section className="empty-state clients-empty-state">
           <div className="empty-state-icon" aria-hidden="true">
             +
@@ -533,7 +542,7 @@ export function ClientsPage() {
         </section>
       )}
 
-      {!isLoading && selectedStatusCount > 0 && visibleClients.length === 0 && (
+      {!isLoading && !loadError && selectedStatusCount > 0 && visibleClients.length === 0 && (
         <section className="empty-state clients-empty-state">
           <p className="eyebrow">Sin coincidencias</p>
           <h2>No encontramos clientes</h2>
@@ -541,7 +550,7 @@ export function ClientsPage() {
         </section>
       )}
 
-      {!isLoading && visibleClients.length > 0 && (
+      {!isLoading && !loadError && visibleClients.length > 0 && (
         <div className="clients-table-card">
           <table className="clients-table">
             <thead>
@@ -569,7 +578,7 @@ export function ClientsPage() {
                   <td>{client.identification ?? <span className="client-secondary">—</span>}</td>
                   <td>{formatDate(client.updatedAt)}</td>
                   <td>
-                    <div className="row-actions">
+                    <div className="row-actions compact-row-actions">
                       {!client.isArchived && (
                         <button
                           className="text-button"
@@ -589,29 +598,18 @@ export function ClientsPage() {
                           >
                             {actionClientId === client.id ? "Restaurando..." : "Restaurar"}
                           </button>
-                          <button
-                            className="text-button danger-text"
-                            type="button"
-                            disabled={actionClientId === client.id}
-                            onClick={() => {
-                              setClientToArchive(null);
-                              setClientToDelete(client);
-                            }}
-                          >
-                            Eliminar
-                          </button>
+                          <ActionMenu>
+                            <button className="danger-text" type="button" disabled={actionClientId === client.id} onClick={() => { setClientToArchive(null); setClientToDelete(client); }}>
+                              Eliminar definitivamente
+                            </button>
+                          </ActionMenu>
                         </>
                       ) : (
-                        <button
-                          className="text-button danger-text"
-                          type="button"
-                          onClick={() => {
-                            setClientToDelete(null);
-                            setClientToArchive(client);
-                          }}
-                        >
-                          Archivar
-                        </button>
+                        <ActionMenu>
+                          <button type="button" onClick={() => { setClientToDelete(null); setClientToArchive(client); }}>
+                            Archivar cliente
+                          </button>
+                        </ActionMenu>
                       )}
                     </div>
                   </td>

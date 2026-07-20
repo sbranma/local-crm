@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { save } from "@tauri-apps/plugin-dialog";
+import { ActionMenu } from "../../components/ActionMenu";
+import { LoadErrorState } from "../../components/LoadErrorState";
 import { ModalDialog } from "../../components/ModalDialog";
 import { listClients } from "../clients/client.api";
 import type { Client } from "../clients/client.types";
@@ -26,6 +28,9 @@ import type {
 
 type QuoteStatusFilter = "all" | QuoteStatus;
 type FormMode = { type: "create" } | { type: "edit"; quoteId: number };
+type QuotesPageProps = {
+  onNavigate?: (destination: "Clientes" | "Configuración") => void;
+};
 
 type QuoteItemForm = {
   key: string;
@@ -55,12 +60,14 @@ const statusLabels: Record<QuoteStatus, string> = {
   expired: "Vencida",
 };
 
-export function QuotesPage() {
+export function QuotesPage({ onNavigate }: QuotesPageProps) {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,6 +87,8 @@ export function QuotesPage() {
     let isCurrent = true;
 
     async function loadPageData() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const [storedQuotes, storedClients, storedSettings, storedInventoryItems] = await Promise.all([
           listQuotes(),
@@ -96,7 +105,7 @@ export function QuotesPage() {
         }
       } catch (error: unknown) {
         if (isCurrent) {
-          setPageError(getErrorMessage(error, "No se pudieron cargar las cotizaciones."));
+          setLoadError(getErrorMessage(error, "No se pudieron cargar las cotizaciones."));
         }
       } finally {
         if (isCurrent) setIsLoading(false);
@@ -107,7 +116,7 @@ export function QuotesPage() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const activeClients = clients.filter((client) => !client.isArchived);
   const businessIsConfigured = Boolean(settings && settings.businessName.trim().length >= 2);
@@ -426,21 +435,23 @@ export function QuotesPage() {
         <button
           className="primary-button"
           type="button"
-          disabled={!businessIsConfigured || activeClients.length === 0}
+          disabled={Boolean(loadError) || !businessIsConfigured || activeClients.length === 0}
           onClick={openCreateForm}
         >
           Nueva cotización
         </button>
       </header>
 
-      {!businessIsConfigured && (
-        <div className="feedback-banner warning" role="status">
-          Configura el nombre y los datos del negocio antes de crear cotizaciones.
+      {!loadError && !businessIsConfigured && (
+        <div className="feedback-banner warning actionable-feedback" role="status">
+          <span>Configura el nombre y los datos del negocio antes de crear cotizaciones.</span>
+          {onNavigate && <button className="text-button" type="button" onClick={() => onNavigate("Configuración")}>Ir a Configuración</button>}
         </div>
       )}
-      {businessIsConfigured && activeClients.length === 0 && (
-        <div className="feedback-banner warning" role="status">
-          Necesitas al menos un cliente activo para crear una cotización.
+      {!loadError && businessIsConfigured && activeClients.length === 0 && (
+        <div className="feedback-banner warning actionable-feedback" role="status">
+          <span>Necesitas al menos un cliente activo para crear una cotización.</span>
+          {onNavigate && <button className="text-button" type="button" onClick={() => onNavigate("Clientes")}>Ir a Clientes</button>}
         </div>
       )}
       {pageError && <div className="feedback-banner error" role="alert">{pageError}</div>}
@@ -448,12 +459,14 @@ export function QuotesPage() {
         <div className="feedback-banner success" role="status">{successMessage}</div>
       )}
 
-      <section className="task-summary-grid" aria-label="Resumen de cotizaciones">
+      {loadError && <LoadErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
+
+      {!loadError && <section className="task-summary-grid" aria-label="Resumen de cotizaciones">
         <SummaryCard label="Borradores" value={counts.draft} />
         <SummaryCard label="Enviadas" value={counts.sent} />
         <SummaryCard label="Aceptadas" value={counts.accepted} />
         <SummaryCard label="Vencidas" value={counts.expired} warning />
-      </section>
+      </section>}
 
       {selectedQuote && (
         <ModalDialog
@@ -472,7 +485,7 @@ export function QuotesPage() {
         </ModalDialog>
       )}
 
-      <section className="clients-toolbar quote-filters" aria-label="Filtros de cotizaciones">
+      {!loadError && <section className="clients-toolbar quote-filters" aria-label="Filtros de cotizaciones">
         <label className="client-search">
           <span className="sr-only">Buscar cotizaciones</span>
           <input
@@ -504,10 +517,11 @@ export function QuotesPage() {
             <input type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
           </label>
         </div>
-      </section>
-      <p className="clients-result-count">
+        {(searchTerm || statusFilter !== "all" || dateFrom || dateTo) && <button className="filter-reset-button" type="button" onClick={() => { setSearchTerm(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); }}>Limpiar filtros</button>}
+      </section>}
+      {!loadError && <p className="clients-result-count">
         {visibleQuotes.length} {visibleQuotes.length === 1 ? "cotización visible" : "cotizaciones visibles"}
-      </p>
+      </p>}
 
       {quoteToDelete && (
         <ModalDialog
@@ -540,7 +554,7 @@ export function QuotesPage() {
       )}
 
       {isLoading && <div className="loading-state">Cargando cotizaciones...</div>}
-      {!isLoading && quotes.length === 0 && (
+      {!isLoading && !loadError && quotes.length === 0 && (
         <section className="empty-state clients-empty-state">
           <div className="empty-state-icon" aria-hidden="true">+</div>
           <p className="eyebrow">Sin cotizaciones</p>
@@ -548,7 +562,7 @@ export function QuotesPage() {
           <p>Configura el negocio, elige un cliente y agrega los servicios que deseas cotizar.</p>
         </section>
       )}
-      {!isLoading && quotes.length > 0 && visibleQuotes.length === 0 && (
+      {!isLoading && !loadError && quotes.length > 0 && visibleQuotes.length === 0 && (
         <section className="empty-state clients-empty-state">
           <p className="eyebrow">Sin coincidencias</p>
           <h2>No encontramos cotizaciones</h2>
@@ -556,7 +570,7 @@ export function QuotesPage() {
         </section>
       )}
 
-      {!isLoading && visibleQuotes.length > 0 && (
+      {!isLoading && !loadError && visibleQuotes.length > 0 && (
         <div className="clients-table-card">
           <table className="clients-table quotes-table">
             <thead>
@@ -583,38 +597,24 @@ export function QuotesPage() {
                   <td><span className={`quote-status status-${quote.status}`}>{statusLabels[quote.status]}</span></td>
                   <td><strong>{formatMoney(quote.totalMinor, quote.currency)}</strong></td>
                   <td>
-                    <div className="row-actions quote-row-actions">
+                    <div className="row-actions quote-row-actions compact-row-actions">
                       <button className="text-button" type="button" onClick={() => void handleView(quote)}>Ver</button>
-                      {quote.status === "draft" && (
-                        <button className="text-button" type="button" onClick={() => void openEditForm(quote)}>Editar</button>
-                      )}
                       <button
                         className="text-button"
                         type="button"
                         disabled={actionQuoteId === quote.id}
                         onClick={() => void handleDownload(quote)}
                       >
-                        Descargar PDF
+                        PDF
                       </button>
-                      <button className="text-button" type="button" onClick={() => void openDuplicateForm(quote)}>
-                        Duplicar
-                      </button>
-                      {quote.status === "draft" && (
-                        <button className="text-button" type="button" onClick={() => void handleStatusChange(quote, "sent")}>
-                          Marcar enviada
-                        </button>
-                      )}
-                      {quote.status === "sent" && (
-                        <>
-                          <button className="text-button" type="button" onClick={() => void handleStatusChange(quote, "accepted")}>Marcar aceptada</button>
-                          <button className="text-button danger-text" type="button" onClick={() => void handleStatusChange(quote, "rejected")}>Marcar rechazada</button>
-                        </>
-                      )}
-                      {quote.status === "draft" && (
-                        <button className="text-button danger-text" type="button" onClick={() => setQuoteToDelete(quote)}>
-                          Eliminar
-                        </button>
-                      )}
+                      <ActionMenu>
+                        {quote.status === "draft" && <button type="button" onClick={() => void openEditForm(quote)}>Editar borrador</button>}
+                        <button type="button" onClick={() => void openDuplicateForm(quote)}>Duplicar</button>
+                        {quote.status === "draft" && <button type="button" onClick={() => void handleStatusChange(quote, "sent")}>Marcar enviada</button>}
+                        {quote.status === "sent" && <button type="button" onClick={() => void handleStatusChange(quote, "accepted")}>Marcar aceptada</button>}
+                        {quote.status === "sent" && <button className="danger-text" type="button" onClick={() => void handleStatusChange(quote, "rejected")}>Marcar rechazada</button>}
+                        {quote.status === "draft" && <button className="danger-text" type="button" onClick={() => setQuoteToDelete(quote)}>Eliminar borrador</button>}
+                      </ActionMenu>
                     </div>
                   </td>
                 </tr>

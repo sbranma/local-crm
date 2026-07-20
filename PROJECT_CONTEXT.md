@@ -188,6 +188,20 @@ Esta división es una guía, no una invitación a crear complejidad innecesaria.
 - Procurar accesibilidad mediante contraste, foco visible, etiquetas y navegación por teclado.
 - Adaptar la interfaz a distintos tamaños de ventana dentro de la aplicación de escritorio.
 
+Patrones implementados en la interfaz actual:
+
+- Navegación lateral agrupada por contexto, con iconos y modo compacto para ventanas angostas.
+- Formularios y confirmaciones dentro de diálogos para mantener el contexto del módulo.
+- Acciones principales visibles y acciones secundarias o destructivas agrupadas en menús compactos.
+- Filtros consistentes con una opción para limpiarlos cuando están activos.
+- Estados de error de carga separados de los estados vacíos, con reintento explícito y sin mostrar métricas falsas.
+- Lista de primeros pasos en el Dashboard cuando faltan los datos mínimos para comenzar.
+- Avisos accionables que llevan al usuario a Clientes o Configuración cuando una cotización está bloqueada.
+- Recorrido inicial de cuatro pasos que explica el flujo, el almacenamiento local y los respaldos.
+- Carga opcional y transaccional de datos ficticios relacionados, disponible únicamente cuando la base está completamente vacía.
+
+Los ejemplos iniciales deben usar nombres visibles como demostración y direcciones del dominio reservado `example.invalid`. Nunca deben reemplazar, mezclar ni modificar información existente. No se incluyen archivos físicos de ejemplo para evitar escribir documentos innecesarios en el equipo del usuario.
+
 ## Flujo de trabajo
 
 El desarrollo debe avanzar en fases pequeñas. No se debe intentar construir toda la aplicación de una sola vez.

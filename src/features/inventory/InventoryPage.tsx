@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { ActionMenu } from "../../components/ActionMenu";
+import { LoadErrorState } from "../../components/LoadErrorState";
 import { ModalDialog } from "../../components/ModalDialog";
 import { getBusinessSettings } from "../settings/settings.api";
 import type { CurrencyCode } from "../settings/settings.types";
@@ -78,6 +80,8 @@ export function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [currency, setCurrency] = useState<CurrencyCode>("CRC");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -108,6 +112,8 @@ export function InventoryPage() {
     let isCurrent = true;
 
     async function loadPageData() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const [storedItems, settings] = await Promise.all([
           listInventoryItems(),
@@ -119,7 +125,7 @@ export function InventoryPage() {
         }
       } catch (error: unknown) {
         if (isCurrent) {
-          setPageError(getErrorMessage(error, "No se pudo cargar el inventario."));
+          setLoadError(getErrorMessage(error, "No se pudo cargar el inventario."));
         }
       } finally {
         if (isCurrent) setIsLoading(false);
@@ -130,7 +136,7 @@ export function InventoryPage() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const categories = useMemo(
     () => Array.from(new Set(items.map((item) => item.category).filter((value): value is string => Boolean(value))))
@@ -374,20 +380,21 @@ export function InventoryPage() {
           <h1>Inventario</h1>
           <p className="page-description">Administra productos, servicios, precios y movimientos de stock.</p>
         </div>
-        <button className="primary-button" type="button" onClick={openCreateForm}>Nuevo artículo</button>
+        <button className="primary-button" type="button" disabled={Boolean(loadError)} onClick={openCreateForm}>Nuevo artículo</button>
       </header>
 
       {pageError && <div className="feedback-banner error" role="alert">{pageError}</div>}
       {successMessage && <div className="feedback-banner success" role="status">{successMessage}</div>}
+      {loadError && <LoadErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
 
-      <section className="inventory-summary-grid" aria-label="Resumen de inventario">
+      {!loadError && <section className="inventory-summary-grid" aria-label="Resumen de inventario">
         <SummaryCard label="Productos activos" value={String(counts.products)} />
         <SummaryCard label="Servicios activos" value={String(counts.services)} />
         <SummaryCard label="Bajo stock" value={String(counts.lowStock)} warning={counts.lowStock > 0} />
         <SummaryCard label="Valor al costo" value={formatMoney(counts.stockValueMinor, currency)} />
-      </section>
+      </section>}
 
-      <section className="inventory-toolbar" aria-label="Filtros de inventario">
+      {!loadError && <section className="inventory-toolbar" aria-label="Filtros de inventario">
         <label className="inventory-search">
           <span className="sr-only">Buscar inventario</span>
           <input type="search" placeholder="Buscar por nombre, SKU, categoría o descripción" value={searchTerm} onChange={(event) => setSearchTerm(event.currentTarget.value)} />
@@ -399,12 +406,13 @@ export function InventoryPage() {
           <button className={statusFilter === "active" ? "active" : undefined} type="button" aria-pressed={statusFilter === "active"} onClick={() => setStatusFilter("active")}>Activos</button>
           <button className={statusFilter === "archived" ? "active" : undefined} type="button" aria-pressed={statusFilter === "archived"} onClick={() => setStatusFilter("archived")}>Archivados</button>
         </div>
-      </section>
+        {(searchTerm || typeFilter !== "all" || categoryFilter !== "all" || stockFilter !== "all" || statusFilter !== "active") && <button className="filter-reset-button" type="button" onClick={() => { setSearchTerm(""); setTypeFilter("all"); setCategoryFilter("all"); setStockFilter("all"); setStatusFilter("active"); }}>Limpiar filtros</button>}
+      </section>}
 
-      <p className="clients-result-count">{visibleItems.length} {visibleItems.length === 1 ? "artículo visible" : "artículos visibles"}</p>
+      {!loadError && <p className="clients-result-count">{visibleItems.length} {visibleItems.length === 1 ? "artículo visible" : "artículos visibles"}</p>}
       {isLoading && <div className="loading-state">Cargando inventario...</div>}
 
-      {!isLoading && items.length === 0 && (
+      {!isLoading && !loadError && items.length === 0 && (
         <section className="empty-state clients-empty-state">
           <div className="empty-state-icon" aria-hidden="true">+</div>
           <p className="eyebrow">Catálogo vacío</p>
@@ -414,11 +422,11 @@ export function InventoryPage() {
         </section>
       )}
 
-      {!isLoading && items.length > 0 && visibleItems.length === 0 && (
+      {!isLoading && !loadError && items.length > 0 && visibleItems.length === 0 && (
         <section className="empty-state clients-empty-state"><p className="eyebrow">Sin coincidencias</p><h2>No encontramos artículos</h2><p>Prueba con otros filtros.</p></section>
       )}
 
-      {!isLoading && visibleItems.length > 0 && (
+      {!isLoading && !loadError && visibleItems.length > 0 && (
         <div className="clients-table-card">
           <table className="clients-table inventory-table">
             <thead><tr><th>Artículo</th><th>Categoría</th><th>Precio de venta</th><th>Existencias</th><th>Estado</th><th className="actions-column">Acciones</th></tr></thead>
@@ -429,11 +437,13 @@ export function InventoryPage() {
                 <td><strong>{formatMoney(item.salePriceMinor, currency)}</strong><span className="client-secondary">Costo {formatMoney(item.costPriceMinor, currency)}</span></td>
                 <td>{item.itemType === "product" ? <><strong>{formatQuantity(item.currentStockMillis)} {item.unit}</strong><span className="client-secondary">Mínimo {formatQuantity(item.minimumStockMillis)}</span>{isLowStock(item) && <span className="inventory-low-stock-label">Bajo stock</span>}</> : <span className="client-secondary">No aplica</span>}</td>
                 <td><span className={`inventory-status ${item.isArchived ? "archived" : "active"}`}>{item.isArchived ? "Archivado" : "Activo"}</span></td>
-                <td><div className="row-actions inventory-row-actions">
+                <td><div className="row-actions inventory-row-actions compact-row-actions">
                   <button className="text-button" type="button" onClick={() => openEditForm(item)}>Editar</button>
                   {item.itemType === "product" && !item.isArchived && <button className="text-button" type="button" onClick={() => openMovementForm(item)}>Movimiento</button>}
-                  {item.itemType === "product" && <button className="text-button" type="button" onClick={() => void openHistory(item)}>Historial</button>}
-                  {item.isArchived ? <><button className="text-button" type="button" disabled={actionItemId === item.id} onClick={() => void handleRestore(item)}>Restaurar</button><button className="text-button danger-text" type="button" onClick={() => setItemToDelete(item)}>Eliminar</button></> : <button className="text-button danger-text" type="button" onClick={() => setItemToArchive(item)}>Archivar</button>}
+                  <ActionMenu>
+                    {item.itemType === "product" && <button type="button" onClick={() => void openHistory(item)}>Ver historial</button>}
+                    {item.isArchived ? <><button type="button" disabled={actionItemId === item.id} onClick={() => void handleRestore(item)}>Restaurar</button><button className="danger-text" type="button" onClick={() => setItemToDelete(item)}>Eliminar definitivamente</button></> : <button type="button" onClick={() => setItemToArchive(item)}>Archivar artículo</button>}
+                  </ActionMenu>
                 </div></td>
               </tr>
             ))}</tbody>

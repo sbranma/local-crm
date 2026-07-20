@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { QuoteStatus } from "../quotes/quote.types";
+import { UiIcon } from "../../components/UiIcon";
 import { getDashboardSummary } from "./dashboard.api";
 import type {
   DashboardAlert,
@@ -13,7 +14,8 @@ export type DashboardDestination =
   | "Tareas"
   | "Agenda"
   | "Cotizaciones"
-  | "Inventario";
+  | "Inventario"
+  | "Configuración";
 
 type DashboardPageProps = {
   onNavigate: (destination: DashboardDestination) => void;
@@ -113,6 +115,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const acceptedQuotes = quoteStatuses.find(
     (item) => item.status === "accepted",
   ) as DashboardQuoteStatus;
+  const totalQuotes = quoteStatuses.reduce((total, item) => total + item.count, 0);
   const nextItem = summary?.upcomingItems.find(
     (item) => new Date(item.startsAt).getTime() >= Date.now(),
   );
@@ -149,6 +152,20 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
 
       {!isLoading && summary && (
         <>
+          {(!summary.businessName || summary.activeClientCount === 0 || totalQuotes === 0) && (
+            <section className="dashboard-onboarding" aria-labelledby="onboarding-title">
+              <div className="onboarding-intro">
+                <p className="eyebrow">Primeros pasos</p>
+                <h2 id="onboarding-title">Deja tu CRM listo para trabajar</h2>
+                <p>Completa esta base una sola vez y el resto del flujo será mucho más rápido.</p>
+              </div>
+              <div className="onboarding-steps">
+                <OnboardingStep complete={Boolean(summary.businessName)} label="Configura tu negocio" onClick={() => onNavigate("Configuración")} />
+                <OnboardingStep complete={summary.activeClientCount > 0} label="Agrega un cliente" onClick={() => onNavigate("Clientes")} />
+                <OnboardingStep complete={totalQuotes > 0} label="Crea tu primera cotización" onClick={() => onNavigate("Cotizaciones")} />
+              </div>
+            </section>
+          )}
           <section className="dashboard-metrics" aria-label="Indicadores principales">
             <MetricCard
               label="Tareas abiertas"
@@ -291,6 +308,16 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
         </>
       )}
     </section>
+  );
+}
+
+function OnboardingStep({ complete, label, onClick }: { complete: boolean; label: string; onClick: () => void }) {
+  return (
+    <button className={complete ? "onboarding-step complete" : "onboarding-step"} type="button" onClick={onClick}>
+      <span className="onboarding-step-icon" aria-hidden="true">{complete ? <UiIcon name="check" size={16} /> : null}</span>
+      <span>{label}</span>
+      <small>{complete ? "Listo" : "Completar"}</small>
+    </button>
   );
 }
 

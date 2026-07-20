@@ -394,6 +394,7 @@ Preparar un MVP demostrable, instalable y defendible profesionalmente.
 - Instalador para Windows.
 - README orientado a usuarios y reclutadores.
 - Capturas o demostración del producto.
+- Recorrido de primera ejecución y conjunto opcional de datos ficticios relacionados.
 - Decisiones técnicas y limitaciones conocidas.
 - Guion breve para explicar el proyecto en una entrevista.
 

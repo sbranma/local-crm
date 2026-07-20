@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { ActionMenu } from "../../components/ActionMenu";
+import { LoadErrorState } from "../../components/LoadErrorState";
 import { ModalDialog } from "../../components/ModalDialog";
 import { listClients } from "../clients/client.api";
 import type { Client } from "../clients/client.types";
@@ -65,6 +67,8 @@ export function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -82,6 +86,8 @@ export function TasksPage() {
     let isCurrent = true;
 
     async function loadPageData() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const [storedTasks, storedClients] = await Promise.all([
           listTasks(),
@@ -94,7 +100,7 @@ export function TasksPage() {
         }
       } catch (error: unknown) {
         if (isCurrent) {
-          setPageError(getErrorMessage(error, "No se pudieron cargar las tareas."));
+          setLoadError(getErrorMessage(error, "No se pudieron cargar las tareas."));
         }
       } finally {
         if (isCurrent) {
@@ -108,7 +114,7 @@ export function TasksPage() {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const counts = useMemo(() => {
     const openTasks = tasks.filter((task) => task.status !== "completed");
@@ -302,7 +308,7 @@ export function TasksPage() {
           </p>
         </div>
 
-        <button className="primary-button" type="button" onClick={openCreateForm}>
+        <button className="primary-button" type="button" disabled={Boolean(loadError)} onClick={openCreateForm}>
           Nueva tarea
         </button>
       </header>
@@ -319,7 +325,9 @@ export function TasksPage() {
         </div>
       )}
 
-      <section className="task-summary-grid" aria-label="Resumen de tareas">
+      {loadError && <LoadErrorState message={loadError} onRetry={() => setReloadKey((key) => key + 1)} />}
+
+      {!loadError && <section className="task-summary-grid" aria-label="Resumen de tareas">
         <article className="task-summary-card">
           <span>Abiertas</span>
           <strong>{counts.open}</strong>
@@ -336,7 +344,7 @@ export function TasksPage() {
           <span>Completadas</span>
           <strong>{counts.completed}</strong>
         </article>
-      </section>
+      </section>}
 
       {formMode && (
         <ModalDialog
@@ -466,7 +474,7 @@ export function TasksPage() {
         </ModalDialog>
       )}
 
-      <section className="clients-toolbar tasks-toolbar" aria-label="Filtros de tareas">
+      {!loadError && <section className="clients-toolbar tasks-toolbar" aria-label="Filtros de tareas">
         <label className="client-search">
           <span className="sr-only">Buscar tareas</span>
           <input
@@ -507,11 +515,12 @@ export function TasksPage() {
             </select>
           </label>
         </div>
-      </section>
+        {(searchTerm || statusFilter !== "all" || priorityFilter !== "all") && <button className="filter-reset-button" type="button" onClick={() => { setSearchTerm(""); setStatusFilter("all"); setPriorityFilter("all"); }}>Limpiar filtros</button>}
+      </section>}
 
-      <p className="clients-result-count">
+      {!loadError && <p className="clients-result-count">
         {visibleTasks.length} {visibleTasks.length === 1 ? "tarea visible" : "tareas visibles"}
-      </p>
+      </p>}
 
       {taskToDelete && (
         <ModalDialog
@@ -549,7 +558,7 @@ export function TasksPage() {
 
       {isLoading && <div className="loading-state">Cargando tareas...</div>}
 
-      {!isLoading && tasks.length === 0 && (
+      {!isLoading && !loadError && tasks.length === 0 && (
         <section className="empty-state clients-empty-state">
           <div className="empty-state-icon" aria-hidden="true">+</div>
           <p className="eyebrow">Sin tareas</p>
@@ -561,7 +570,7 @@ export function TasksPage() {
         </section>
       )}
 
-      {!isLoading && tasks.length > 0 && visibleTasks.length === 0 && (
+      {!isLoading && !loadError && tasks.length > 0 && visibleTasks.length === 0 && (
         <section className="empty-state clients-empty-state">
           <p className="eyebrow">Sin coincidencias</p>
           <h2>No encontramos tareas</h2>
@@ -569,7 +578,7 @@ export function TasksPage() {
         </section>
       )}
 
-      {!isLoading && visibleTasks.length > 0 && (
+      {!isLoading && !loadError && visibleTasks.length > 0 && (
         <div className="clients-table-card">
           <table className="clients-table tasks-table">
             <thead>
@@ -617,7 +626,7 @@ export function TasksPage() {
                       </span>
                     </td>
                     <td>
-                      <div className="row-actions task-row-actions">
+                      <div className="row-actions task-row-actions compact-row-actions">
                         <button className="text-button" type="button" onClick={() => openEditForm(task)}>
                           Editar
                         </button>
@@ -638,13 +647,11 @@ export function TasksPage() {
                               ? "Reabrir"
                               : "Completar"}
                         </button>
-                        <button
-                          className="text-button danger-text"
-                          type="button"
-                          onClick={() => setTaskToDelete(task)}
-                        >
-                          Eliminar
-                        </button>
+                        <ActionMenu>
+                          <button className="danger-text" type="button" onClick={() => setTaskToDelete(task)}>
+                            Eliminar tarea
+                          </button>
+                        </ActionMenu>
                       </div>
                     </td>
                   </tr>
