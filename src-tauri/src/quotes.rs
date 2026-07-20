@@ -45,6 +45,7 @@ impl QuoteStatus {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteItemInput {
+    inventory_item_id: Option<i64>,
     description: String,
     quantity_millis: i64,
     unit: String,
@@ -68,6 +69,7 @@ pub struct QuoteInput {
 #[serde(rename_all = "camelCase")]
 pub struct QuoteItem {
     id: i64,
+    inventory_item_id: Option<i64>,
     description: String,
     quantity_millis: i64,
     unit: String,
@@ -461,6 +463,7 @@ fn validate_input(input: QuoteInput) -> Result<ValidatedQuoteInput, String> {
         }
 
         items.push(QuoteItemInput {
+            inventory_item_id: item.inventory_item_id,
             description,
             quantity_millis: item.quantity_millis,
             unit,
@@ -533,21 +536,39 @@ fn insert_items(
             "
             INSERT INTO quote_items (
                 quote_id,
+                inventory_item_id,
                 description,
                 quantity_millis,
                 unit,
                 unit_price_minor,
                 position
             )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
             ",
         )
         .map_err(|error| format!("No se pudieron preparar los conceptos: {error}"))?;
 
     for (position, item) in items.iter().enumerate() {
+        if let Some(inventory_item_id) = item.inventory_item_id {
+            let exists = transaction
+                .query_row(
+                    "SELECT 1 FROM inventory_items WHERE id = ?1",
+                    params![inventory_item_id],
+                    |_| Ok(()),
+                )
+                .optional()
+                .map_err(|error| format!("No se pudo consultar el catálogo: {error}"))?
+                .is_some();
+
+            if !exists {
+                return Err("Uno de los artículos seleccionados ya no existe.".to_owned());
+            }
+        }
+
         statement
             .execute(params![
                 quote_id,
+                item.inventory_item_id,
                 item.description,
                 item.quantity_millis,
                 item.unit,
@@ -576,7 +597,7 @@ fn find_quote_items(connection: &Connection, quote_id: i64) -> Result<Vec<QuoteI
     let mut statement = connection
         .prepare(
             "
-            SELECT id, description, quantity_millis, unit, unit_price_minor
+            SELECT id, inventory_item_id, description, quantity_millis, unit, unit_price_minor
             FROM quote_items
             WHERE quote_id = ?1
             ORDER BY position
@@ -586,8 +607,8 @@ fn find_quote_items(connection: &Connection, quote_id: i64) -> Result<Vec<QuoteI
 
     let items = statement
         .query_map(params![quote_id], |row| {
-            let quantity_millis = row.get::<_, i64>(2)?;
-            let unit_price_minor = row.get::<_, i64>(4)?;
+            let quantity_millis = row.get::<_, i64>(3)?;
+            let unit_price_minor = row.get::<_, i64>(5)?;
             let total_minor = i64::try_from(round_div(
                 i128::from(quantity_millis) * i128::from(unit_price_minor),
                 1_000,
@@ -602,9 +623,10 @@ fn find_quote_items(connection: &Connection, quote_id: i64) -> Result<Vec<QuoteI
 
             Ok(QuoteItem {
                 id: row.get(0)?,
-                description: row.get(1)?,
+                inventory_item_id: row.get(1)?,
+                description: row.get(2)?,
                 quantity_millis,
-                unit: row.get(3)?,
+                unit: row.get(4)?,
                 unit_price_minor,
                 total_minor,
             })
@@ -893,6 +915,7 @@ mod tests {
 
     fn item(quantity_millis: i64, unit_price_minor: i64) -> QuoteItemInput {
         QuoteItemInput {
+            inventory_item_id: None,
             description: "Servicio de prueba".to_owned(),
             quantity_millis,
             unit: "unidad".to_owned(),

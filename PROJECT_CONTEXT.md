@@ -8,7 +8,7 @@ El proyecto también funciona como una pieza profesional de portafolio. Debe dem
 
 ## Objetivos del producto
 
-- Ofrecer una herramienta sencilla para administrar clientes, trabajo pendiente y cotizaciones.
+- Ofrecer una herramienta sencilla para administrar clientes, trabajo pendiente, cotizaciones y un inventario básico.
 - Funcionar localmente, incluso sin conexión permanente a Internet.
 - Evitar que un servidor o servicio externo sea obligatorio para usar las funciones principales.
 - Mantener los datos del negocio bajo control del usuario.
@@ -79,6 +79,18 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 - Permitir editar y eliminar solo borradores; las cotizaciones emitidas se conservan como historial y pueden duplicarse.
 - Generar y guardar un PDF presentable, incluso sin conexión.
 
+### Inventario
+
+- Mantener un catálogo compartido de productos y servicios.
+- Guardar SKU opcional, categoría, descripción, unidad y precios de costo y venta.
+- Controlar existencias y stock mínimo únicamente para productos.
+- Registrar entradas, salidas y ajustes con motivo e historial auditable.
+- Impedir salidas que produzcan existencias negativas.
+- Permitir buscar, filtrar, editar, archivar y restaurar artículos.
+- Usar artículos del catálogo como punto de partida editable para conceptos de cotización.
+- Conservar en cada cotización una copia de la descripción, unidad y precio utilizados.
+- No descontar inventario al crear o aceptar una cotización.
+
 ### Configuración del negocio
 
 - Datos generales del negocio usados en la aplicación y en documentos.
@@ -99,11 +111,8 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 Los siguientes módulos son posibilidades futuras y no forman parte del MVP salvo solicitud explícita:
 
 - Vehículos.
-- Inventario.
-- Productos.
 - Facturas.
 - Reportes avanzados.
-- Catálogo.
 - Integraciones con correo electrónico.
 - Integraciones con WhatsApp.
 - Integraciones con APIs externas.

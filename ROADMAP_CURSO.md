@@ -296,6 +296,27 @@ Construir el módulo con mayor concentración de reglas de negocio del MVP.
 
 Los totales son reproducibles, están probados y permanecen correctos al guardar y volver a abrir la cotización.
 
+## Fase 6.5 — Inventario y catálogo
+
+### Objetivo
+
+Administrar productos, servicios, precios y existencias, y reutilizar el catálogo en cotizaciones.
+
+### Construcción
+
+- CRUD y archivado de productos y servicios.
+- SKU opcional único, categorías, unidades y precios.
+- Stock actual y mínimo para productos.
+- Entradas, salidas y ajustes con motivo e historial.
+- Prevención de existencias negativas.
+- Búsqueda y filtros combinados.
+- Selección opcional de artículos al crear conceptos de cotización.
+- Copia histórica de descripción, unidad y precio dentro de cada cotización.
+
+### Criterio para avanzar
+
+Los movimientos son auditables, los datos sobreviven al reinicio y una cotización puede usar el catálogo sin alterar automáticamente las existencias.
+
 ## Fase 7 — Dashboard y configuración
 
 ### Objetivo
@@ -387,9 +408,10 @@ Un pequeño negocio puede instalar Local CRM, configurar sus datos, administrar 
 6. Tareas.
 7. Agenda.
 8. Cotizaciones.
-9. Dashboard y configuración.
-10. Backups y restauración.
-11. Calidad, instalador y presentación profesional.
+9. Inventario y catálogo.
+10. Dashboard y configuración.
+11. Backups y restauración.
+12. Calidad, instalador y presentación profesional.
 
 ## Reglas para no perdernos
 

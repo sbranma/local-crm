@@ -6,6 +6,8 @@ import { listClients } from "../clients/client.api";
 import type { Client } from "../clients/client.types";
 import { getBusinessSettings } from "../settings/settings.api";
 import type { BusinessSettings } from "../settings/settings.types";
+import { listInventoryItems } from "../inventory/inventory.api";
+import type { InventoryItem } from "../inventory/inventory.types";
 import {
   createQuote,
   deleteQuote,
@@ -27,6 +29,7 @@ type FormMode = { type: "create" } | { type: "edit"; quoteId: number };
 
 type QuoteItemForm = {
   key: string;
+  inventoryItemId: string;
   description: string;
   quantity: string;
   unit: string;
@@ -55,6 +58,7 @@ const statusLabels: Record<QuoteStatus, string> = {
 export function QuotesPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -77,16 +81,18 @@ export function QuotesPage() {
 
     async function loadPageData() {
       try {
-        const [storedQuotes, storedClients, storedSettings] = await Promise.all([
+        const [storedQuotes, storedClients, storedSettings, storedInventoryItems] = await Promise.all([
           listQuotes(),
           listClients(),
           getBusinessSettings(),
+          listInventoryItems(),
         ]);
 
         if (isCurrent) {
           setQuotes(sortQuotes(storedQuotes));
           setClients(sortClients(storedClients));
           setSettings(storedSettings);
+          setInventoryItems(sortInventoryItems(storedInventoryItems));
         }
       } catch (error: unknown) {
         if (isCurrent) {
@@ -208,6 +214,32 @@ export function QuotesPage() {
             ...current,
             items: current.items.map((item) =>
               item.key === key ? { ...item, [field]: value } : item,
+            ),
+          }
+        : current,
+    );
+    setIsFormDirty(true);
+    setFormError(null);
+  }
+
+  function selectInventoryItem(key: string, inventoryItemId: string) {
+    const selectedItem = inventoryItems.find((item) => item.id === Number(inventoryItemId));
+    setFormValues((current) =>
+      current
+        ? {
+            ...current,
+            items: current.items.map((item) =>
+              item.key === key
+                ? selectedItem
+                  ? {
+                      ...item,
+                      inventoryItemId,
+                      description: selectedItem.name,
+                      unit: selectedItem.unit,
+                      unitPrice: String(selectedItem.salePriceMinor / 100),
+                    }
+                  : { ...item, inventoryItemId: "" }
+                : item,
             ),
           }
         : current,
@@ -364,12 +396,14 @@ export function QuotesPage() {
           mode={formMode}
           values={formValues}
           clients={clients}
+          inventoryItems={inventoryItems}
           currency={settings.currency}
           totals={previewTotals}
           error={formError}
           isSaving={isSaving}
           onUpdate={updateForm}
           onUpdateItem={updateItem}
+          onSelectInventoryItem={selectInventoryItem}
           onAddItem={addItem}
           onRemoveItem={removeItem}
           onCancel={closeForm}
@@ -597,12 +631,14 @@ type QuoteFormProps = {
   mode: FormMode;
   values: QuoteFormValues;
   clients: Client[];
+  inventoryItems: InventoryItem[];
   currency: string;
   totals: FormTotals | null;
   error: string | null;
   isSaving: boolean;
   onUpdate: <K extends keyof QuoteFormValues>(field: K, value: QuoteFormValues[K]) => void;
   onUpdateItem: (key: string, field: keyof Omit<QuoteItemForm, "key">, value: string) => void;
+  onSelectInventoryItem: (key: string, inventoryItemId: string) => void;
   onAddItem: () => void;
   onRemoveItem: (key: string) => void;
   onCancel: () => void;
@@ -613,12 +649,14 @@ function QuoteForm({
   mode,
   values,
   clients,
+  inventoryItems,
   currency,
   totals,
   error,
   isSaving,
   onUpdate,
   onUpdateItem,
+  onSelectInventoryItem,
   onAddItem,
   onRemoveItem,
   onCancel,
@@ -686,14 +724,39 @@ function QuoteForm({
           </div>
           {values.items.map((item) => {
             const itemTotal = calculateItemTotal(item);
+            const selectedInventoryId = Number(item.inventoryItemId);
+            const selectableInventoryItems = inventoryItems.filter(
+              (inventoryItem) =>
+                !inventoryItem.isArchived || inventoryItem.id === selectedInventoryId,
+            );
             return (
-              <div className="quote-item-row" key={item.key}>
+              <div className="quote-item-editor" key={item.key}>
+                <label className="quote-catalog-selector">
+                  <span>Catálogo (opcional)</span>
+                  <select
+                    value={item.inventoryItemId}
+                    onChange={(event) =>
+                      onSelectInventoryItem(item.key, event.currentTarget.value)
+                    }
+                  >
+                    <option value="">Concepto manual</option>
+                    {selectableInventoryItems.map((inventoryItem) => (
+                      <option value={inventoryItem.id} key={inventoryItem.id}>
+                        {inventoryItem.name}
+                        {inventoryItem.sku ? ` · ${inventoryItem.sku}` : ""}
+                        {inventoryItem.isArchived ? " (archivado)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="quote-item-row">
                 <input aria-label="Descripción" value={item.description} maxLength={300} placeholder="Servicio o producto" onChange={(event) => onUpdateItem(item.key, "description", event.currentTarget.value)} />
                 <input aria-label="Cantidad" type="number" min="0.001" step="0.001" value={item.quantity} onChange={(event) => onUpdateItem(item.key, "quantity", event.currentTarget.value)} />
                 <input aria-label="Unidad" value={item.unit} maxLength={30} placeholder="unidad" onChange={(event) => onUpdateItem(item.key, "unit", event.currentTarget.value)} />
                 <input aria-label="Precio unitario" type="number" min="0" step="0.01" value={item.unitPrice} onChange={(event) => onUpdateItem(item.key, "unitPrice", event.currentTarget.value)} />
                 <strong>{formatMoney(itemTotal, currency)}</strong>
                 <button className="text-button danger-text" type="button" disabled={values.items.length === 1} onClick={() => onRemoveItem(item.key)} aria-label="Eliminar concepto">×</button>
+                </div>
               </div>
             );
           })}
@@ -787,7 +850,14 @@ function createEmptyForm(settings: BusinessSettings): QuoteFormValues {
 }
 
 function emptyItem(): QuoteItemForm {
-  return { key: crypto.randomUUID(), description: "", quantity: "1", unit: "unidad", unitPrice: "0" };
+  return {
+    key: crypto.randomUUID(),
+    inventoryItemId: "",
+    description: "",
+    quantity: "1",
+    unit: "unidad",
+    unitPrice: "0",
+  };
 }
 
 function quoteToForm(quote: Quote): QuoteFormValues {
@@ -801,6 +871,7 @@ function quoteToForm(quote: Quote): QuoteFormValues {
     terms: quote.terms ?? "",
     items: quote.items.map((item) => ({
       key: crypto.randomUUID(),
+      inventoryItemId: item.inventoryItemId ? String(item.inventoryItemId) : "",
       description: item.description,
       quantity: String(item.quantityMillis / 1_000),
       unit: item.unit,
@@ -843,6 +914,7 @@ function toQuoteInput(values: QuoteFormValues): QuoteInput {
 
 function toItemInput(item: QuoteItemForm): QuoteItemInput {
   return {
+    inventoryItemId: item.inventoryItemId ? Number(item.inventoryItemId) : null,
     description: item.description.trim(),
     quantityMillis: Math.round(Number(item.quantity) * 1_000),
     unit: item.unit.trim(),
@@ -872,6 +944,12 @@ function sortQuotes(quotes: Quote[]): Quote[] {
 
 function sortClients(clients: Client[]): Client[] {
   return [...clients].sort((first, second) => first.name.localeCompare(second.name, "es", { sensitivity: "base" }));
+}
+
+function sortInventoryItems(items: InventoryItem[]): InventoryItem[] {
+  return [...items].sort((first, second) =>
+    first.name.localeCompare(second.name, "es", { sensitivity: "base" }),
+  );
 }
 
 function formatMoney(minor: number, currency: string): string {

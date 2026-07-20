@@ -1,6 +1,7 @@
 mod calendar;
 mod clients;
 mod database;
+mod inventory;
 mod pdf_export;
 mod quotes;
 mod settings;
@@ -41,6 +42,13 @@ pub fn run() {
             calendar::update_calendar_event,
             calendar::set_calendar_event_status,
             calendar::delete_calendar_event,
+            inventory::create_inventory_item,
+            inventory::list_inventory_items,
+            inventory::update_inventory_item,
+            inventory::set_inventory_item_archived,
+            inventory::delete_inventory_item,
+            inventory::create_inventory_movement,
+            inventory::list_inventory_movements,
             tasks::create_task,
             tasks::list_tasks,
             tasks::update_task,

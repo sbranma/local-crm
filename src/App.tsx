@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { CalendarPage } from "./features/calendar/CalendarPage";
 import { ClientsPage } from "./features/clients/ClientsPage";
+import { InventoryPage } from "./features/inventory/InventoryPage";
 import { QuotesPage } from "./features/quotes/QuotesPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { TasksPage } from "./features/tasks/TasksPage";
 import "./App.css";
 
-const navigationItems = ["Dashboard", "Clientes", "Tareas", "Agenda", "Cotizaciones"] as const;
+const navigationItems = ["Dashboard", "Clientes", "Tareas", "Agenda", "Cotizaciones", "Inventario"] as const;
 
 type AppSection = (typeof navigationItems)[number] | "Configuración";
 
@@ -60,6 +61,7 @@ function App() {
         {activeSection === "Tareas" && <TasksPage />}
         {activeSection === "Agenda" && <CalendarPage />}
         {activeSection === "Cotizaciones" && <QuotesPage />}
+        {activeSection === "Inventario" && <InventoryPage />}
         {activeSection === "Configuración" && <SettingsPage />}
       </main>
     </div>
@@ -102,7 +104,7 @@ function DashboardPage() {
         <div className="empty-state-icon" aria-hidden="true">+</div>
         <p className="eyebrow">Base preparada</p>
         <h2>Local CRM está listo para trabajar</h2>
-        <p>El CRM ya permite administrar clientes, tareas, agenda y cotizaciones.</p>
+        <p>El CRM ya permite administrar clientes, tareas, agenda, cotizaciones e inventario.</p>
       </section>
     </>
   );

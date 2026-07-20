@@ -85,6 +85,66 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
 
             INSERT OR IGNORE INTO business_settings (id) VALUES (1);
 
+            CREATE TABLE IF NOT EXISTS inventory_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item_type TEXT NOT NULL
+                    CHECK (item_type IN ('product', 'service')),
+                name TEXT NOT NULL CHECK (length(trim(name)) >= 2),
+                sku TEXT,
+                category TEXT,
+                description TEXT,
+                unit TEXT NOT NULL CHECK (length(trim(unit)) > 0),
+                cost_price_minor INTEGER NOT NULL DEFAULT 0
+                    CHECK (cost_price_minor >= 0),
+                sale_price_minor INTEGER NOT NULL DEFAULT 0
+                    CHECK (sale_price_minor >= 0),
+                current_stock_millis INTEGER NOT NULL DEFAULT 0
+                    CHECK (current_stock_millis >= 0),
+                minimum_stock_millis INTEGER NOT NULL DEFAULT 0
+                    CHECK (minimum_stock_millis >= 0),
+                is_archived INTEGER NOT NULL DEFAULT 0
+                    CHECK (is_archived IN (0, 1)),
+                created_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                updated_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                CHECK (
+                    item_type = 'product'
+                    OR (current_stock_millis = 0 AND minimum_stock_millis = 0)
+                )
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_items_sku_unique
+                ON inventory_items (lower(sku))
+                WHERE sku IS NOT NULL;
+
+            CREATE INDEX IF NOT EXISTS idx_inventory_items_archived_type_name
+                ON inventory_items (is_archived, item_type, name COLLATE NOCASE);
+
+            CREATE TABLE IF NOT EXISTS inventory_movements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                inventory_item_id INTEGER NOT NULL,
+                movement_type TEXT NOT NULL
+                    CHECK (movement_type IN ('entry', 'exit', 'adjustment')),
+                quantity_delta_millis INTEGER NOT NULL
+                    CHECK (quantity_delta_millis != 0),
+                previous_stock_millis INTEGER NOT NULL
+                    CHECK (previous_stock_millis >= 0),
+                new_stock_millis INTEGER NOT NULL
+                    CHECK (new_stock_millis >= 0),
+                reason TEXT NOT NULL CHECK (length(trim(reason)) >= 2),
+                created_at TEXT NOT NULL DEFAULT (
+                    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                ),
+                FOREIGN KEY (inventory_item_id)
+                    REFERENCES inventory_items (id) ON DELETE RESTRICT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_inventory_movements_item_date
+                ON inventory_movements (inventory_item_id, created_at DESC);
+
             CREATE TABLE IF NOT EXISTS quotes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 quote_number TEXT NOT NULL UNIQUE,
@@ -126,12 +186,15 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
             CREATE TABLE IF NOT EXISTS quote_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 quote_id INTEGER NOT NULL,
+                inventory_item_id INTEGER,
                 description TEXT NOT NULL,
                 quantity_millis INTEGER NOT NULL CHECK (quantity_millis > 0),
                 unit TEXT NOT NULL,
                 unit_price_minor INTEGER NOT NULL CHECK (unit_price_minor >= 0),
                 position INTEGER NOT NULL,
-                FOREIGN KEY (quote_id) REFERENCES quotes (id) ON DELETE CASCADE
+                FOREIGN KEY (quote_id) REFERENCES quotes (id) ON DELETE CASCADE,
+                FOREIGN KEY (inventory_item_id)
+                    REFERENCES inventory_items (id) ON DELETE RESTRICT
             );
 
             CREATE INDEX IF NOT EXISTS idx_quotes_status_date
@@ -171,12 +234,49 @@ pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
             CREATE INDEX IF NOT EXISTS idx_calendar_events_client
                 ON calendar_events (client_id);
 
-            PRAGMA user_version = 4;
             ",
         )
         .map_err(|error| format!("No se pudo preparar la base de datos: {error}"))?;
 
+    ensure_quote_item_inventory_column(&connection)?;
+
+    connection
+        .execute_batch(
+            "
+            CREATE INDEX IF NOT EXISTS idx_quote_items_inventory
+                ON quote_items (inventory_item_id);
+
+            PRAGMA user_version = 5;
+            ",
+        )
+        .map_err(|error| format!("No se pudo finalizar la migración de inventario: {error}"))?;
+
     Ok(connection)
+}
+
+fn ensure_quote_item_inventory_column(connection: &Connection) -> Result<(), String> {
+    let mut statement = connection
+        .prepare("PRAGMA table_info(quote_items)")
+        .map_err(|error| format!("No se pudo revisar la estructura de cotizaciones: {error}"))?;
+    let columns = statement
+        .query_map([], |row| row.get::<_, String>(1))
+        .map_err(|error| format!("No se pudieron consultar las columnas: {error}"))?
+        .collect::<rusqlite::Result<Vec<String>>>()
+        .map_err(|error| format!("No se pudieron leer las columnas: {error}"))?;
+
+    if !columns.iter().any(|column| column == "inventory_item_id") {
+        connection
+            .execute_batch(
+                "
+                ALTER TABLE quote_items
+                    ADD COLUMN inventory_item_id INTEGER
+                    REFERENCES inventory_items (id) ON DELETE RESTRICT;
+                ",
+            )
+            .map_err(|error| format!("No se pudo vincular inventario con cotizaciones: {error}"))?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -185,7 +285,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn creates_the_calendar_schema_at_version_four() {
+    fn creates_the_inventory_schema_at_version_five() {
         let unique_suffix = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system time should be valid")
@@ -200,16 +300,24 @@ mod tests {
         let version: i64 = connection
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .expect("the schema version should be readable");
-        let calendar_table_count: i64 = connection
+        let inventory_table_count: i64 = connection
             .query_row(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'calendar_events'",
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'inventory_items'",
                 [],
                 |row| row.get(0),
             )
-            .expect("the calendar table should be readable");
+            .expect("the inventory table should be readable");
+        let quote_item_inventory_column: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('quote_items') WHERE name = 'inventory_item_id'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("the quote item inventory column should be readable");
 
-        assert_eq!(version, 4);
-        assert_eq!(calendar_table_count, 1);
+        assert_eq!(version, 5);
+        assert_eq!(inventory_table_count, 1);
+        assert_eq!(quote_item_inventory_column, 1);
 
         drop(connection);
         std::fs::remove_file(database_path).expect("the temporary database should be removable");

@@ -2,6 +2,7 @@ export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected" | "expired"
 
 export type QuoteItem = {
   id: number;
+  inventoryItemId: number | null;
   description: string;
   quantityMillis: number;
   unit: string;
@@ -42,6 +43,7 @@ export type Quote = {
 };
 
 export type QuoteItemInput = {
+  inventoryItemId: number | null;
   description: string;
   quantityMillis: number;
   unit: string;
