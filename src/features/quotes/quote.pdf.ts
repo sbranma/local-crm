@@ -324,5 +324,13 @@ function formatBasisPoints(value: number): string {
 }
 
 function safeText(value: string): string {
-  return value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ");
+  return Array.from(value, (character) => {
+    const code = character.charCodeAt(0);
+    const isUnsafeControl = code <= 8
+      || code === 11
+      || code === 12
+      || (code >= 14 && code <= 31)
+      || code === 127;
+    return isUnsafeControl ? " " : character;
+  }).join("");
 }

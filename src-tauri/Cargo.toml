@@ -3,6 +3,8 @@ name = "local-crm"
 version = "0.1.0"
 description = "CRM de escritorio local para pequeños negocios"
 edition = "2021"
+authors = ["sbranma"]
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

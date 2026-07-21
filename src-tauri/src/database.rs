@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::{fs, path::Path};
 
-pub const CURRENT_SCHEMA_VERSION: i64 = 6;
+pub const CURRENT_SCHEMA_VERSION: i64 = 7;
 
 pub fn initialize_database(database_path: &Path) -> Result<Connection, String> {
     if let Some(parent_directory) = database_path.parent() {
@@ -308,7 +308,12 @@ pub(crate) fn migrate_to_current_schema(connection: &Connection) -> Result<(), S
             CREATE INDEX IF NOT EXISTS idx_documents_client
                 ON documents (client_id);
 
-            PRAGMA user_version = 6;
+            CREATE TABLE IF NOT EXISTS app_metadata (
+                key TEXT PRIMARY KEY CHECK (length(trim(key)) > 0),
+                value TEXT NOT NULL
+            );
+
+            PRAGMA user_version = 7;
             ",
         )
         .map_err(|error| format!("No se pudo finalizar la migración local: {error}"))
@@ -345,7 +350,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn creates_the_document_schema_at_version_six() {
+    fn creates_the_document_and_metadata_schema_at_version_seven() {
         let unique_suffix = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system time should be valid")
@@ -374,10 +379,18 @@ mod tests {
                 |row| row.get(0),
             )
             .expect("the quote item inventory column should be readable");
+        let metadata_table_count: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'app_metadata'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("the metadata table should be readable");
 
-        assert_eq!(version, 6);
+        assert_eq!(version, 7);
         assert_eq!(document_table_count, 1);
         assert_eq!(quote_item_inventory_column, 1);
+        assert_eq!(metadata_table_count, 1);
 
         drop(connection);
         std::fs::remove_file(database_path).expect("the temporary database should be removable");

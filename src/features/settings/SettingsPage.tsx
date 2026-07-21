@@ -6,12 +6,14 @@ import { LoadErrorState } from "../../components/LoadErrorState";
 import { exportBackup, inspectBackup, restoreBackup } from "./backup.api";
 import type { RestoreCandidate } from "./backup.types";
 import { getBusinessSettings, updateBusinessSettings } from "./settings.api";
+import { getSystemInfo, openDataDirectory } from "./system.api";
 import type {
   BusinessSettings,
   BusinessSettingsInput,
   CurrencyCode,
   LogoInput,
 } from "./settings.types";
+import type { SystemInfo } from "./system.types";
 
 type SettingsFormValues = {
   businessName: string;
@@ -47,6 +49,7 @@ const RESTORE_SUCCESS_KEY = "local-crm-restore-success";
 
 export function SettingsPage() {
   const [storedSettings, setStoredSettings] = useState<BusinessSettings | null>(null);
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [formValues, setFormValues] = useState<SettingsFormValues>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [pendingLogo, setPendingLogo] = useState<PendingLogo | null>(null);
@@ -56,6 +59,7 @@ export function SettingsPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isBackupWorking, setIsBackupWorking] = useState(false);
+  const [isOpeningDataDirectory, setIsOpeningDataDirectory] = useState(false);
   const [restoreCandidate, setRestoreCandidate] = useState<RestoreCandidate | null>(null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -75,9 +79,13 @@ export function SettingsPage() {
       setIsLoading(true);
       setLoadError(null);
       try {
-        const settings = await getBusinessSettings();
+        const [settings, loadedSystemInfo] = await Promise.all([
+          getBusinessSettings(),
+          getSystemInfo(),
+        ]);
         if (isCurrent) {
           setStoredSettings(settings);
+          setSystemInfo(loadedSystemInfo);
           setFormValues(toFormValues(settings));
         }
       } catch (error: unknown) {
@@ -210,6 +218,9 @@ export function SettingsPage() {
     setSuccessMessage(null);
     try {
       const backup = await exportBackup(destinationPath);
+      setSystemInfo((current) => current
+        ? { ...current, lastBackupAt: new Date().toISOString() }
+        : current);
       setSuccessMessage(
         `Respaldo “${backup.fileName}” creado correctamente (${formatFileSize(backup.sizeBytes)}).`,
       );
@@ -217,6 +228,18 @@ export function SettingsPage() {
       setPageError(getErrorMessage(error, "No se pudo crear el respaldo."));
     } finally {
       setIsBackupWorking(false);
+    }
+  }
+
+  async function handleOpenDataDirectory() {
+    setIsOpeningDataDirectory(true);
+    setPageError(null);
+    try {
+      await openDataDirectory();
+    } catch (error: unknown) {
+      setPageError(getErrorMessage(error, "No se pudo abrir la carpeta de datos."));
+    } finally {
+      setIsOpeningDataDirectory(false);
     }
   }
 
@@ -447,12 +470,62 @@ export function SettingsPage() {
           </div>
         </section>
 
+        {systemInfo && (
+          <section className="settings-card settings-storage">
+            <div className="settings-card-header settings-section-heading">
+              <div>
+                <p className="eyebrow">Control local</p>
+                <h2>Tus datos en este equipo</h2>
+                <p className="page-description">
+                  La aplicación y tus datos se guardan por separado para conservar la información durante las actualizaciones.
+                </p>
+              </div>
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={isOpeningDataDirectory}
+                onClick={() => void handleOpenDataDirectory()}
+              >
+                {isOpeningDataDirectory ? "Abriendo..." : "Abrir carpeta de datos"}
+              </button>
+            </div>
+
+            <div className="storage-path" title={systemInfo.dataDirectory}>
+              <span>Ubicación principal</span>
+              <code>{systemInfo.dataDirectory}</code>
+            </div>
+
+            <div className="storage-details-grid">
+              <div>
+                <span>Base de datos</span>
+                <strong>local-crm.sqlite3</strong>
+                <small title={systemInfo.databasePath}>{systemInfo.databasePath}</small>
+              </div>
+              <div>
+                <span>Documentos privados</span>
+                <strong>Carpeta documents</strong>
+                <small title={systemInfo.documentsPath}>{systemInfo.documentsPath}</small>
+              </div>
+            </div>
+
+            <div className="storage-notice" role="note">
+              <strong>Información privada y sin cifrado.</strong>
+              <p>No compartas esta carpeta y guarda los respaldos en una ubicación segura.</p>
+            </div>
+          </section>
+        )}
+
         <section className="settings-card settings-backups">
           <div className="settings-card-header">
             <p className="eyebrow">Protección de datos</p>
             <h2>Respaldos</h2>
             <p className="page-description">
               Guarda o recupera toda la información local del CRM en un solo archivo.
+            </p>
+            <p className={systemInfo?.lastBackupAt ? "backup-status" : "backup-status pending"}>
+              {systemInfo?.lastBackupAt
+                ? `Último respaldo: ${formatDateTime(systemInfo.lastBackupAt)}`
+                : "Todavía no se ha registrado ningún respaldo."}
             </p>
           </div>
 
@@ -494,6 +567,24 @@ export function SettingsPage() {
             El respaldo contiene únicamente los datos ya guardados y usa la extensión <strong>.localcrm</strong>.
           </p>
         </section>
+
+        {systemInfo && (
+          <section className="settings-card settings-about">
+            <div className="settings-card-header">
+              <p className="eyebrow">Acerca del producto</p>
+              <h2>Local CRM</h2>
+              <p className="page-description">
+                Aplicación de escritorio local construida con React, TypeScript, Tauri, Rust y SQLite.
+              </p>
+            </div>
+            <div className="about-details-grid">
+              <AboutMetric label="Versión" value={systemInfo.appVersion} />
+              <AboutMetric label="Autor" value={systemInfo.author} />
+              <AboutMetric label="Licencia" value={systemInfo.license} />
+              <AboutMetric label="Modelo" value="Local · Un usuario" />
+            </div>
+          </section>
+        )}
 
         <div className="settings-save-bar">
           <p>Las cotizaciones nuevas usarán estos datos.</p>
@@ -582,6 +673,15 @@ function BackupMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function AboutMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 function SettingsField({
   label,
   value,
@@ -658,6 +758,15 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "fecha no disponible";
+  return new Intl.DateTimeFormat("es-CR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function optionalText(value: string): string | null {

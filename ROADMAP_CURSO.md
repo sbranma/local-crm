@@ -463,8 +463,6 @@ Esta hoja de ruta define la dirección general. No existe una cantidad fija de s
 
 ## Próximo bloque recomendado
 
-**Bloque 0 — Aterrizar el flujo principal del MVP**
+**Bloque final — Instalador y publicación de la V1**
 
-Definiremos rápidamente cómo una persona utilizará Local CRM desde que abre la aplicación por primera vez hasta que crea su primera cotización. De ese recorrido saldrán las reglas que afectarán el modelo de datos y los criterios de aceptación iniciales.
-
-Después realizaremos una **auditoría del entorno**, instalaremos únicamente lo que falte e inicializaremos la aplicación base.
+El alcance funcional está completo. El siguiente bloque consiste en generar el instalador NSIS en español, probar instalación, actualización y desinstalación, capturar la demostración con datos ficticios y publicar el repositorio junto con una GitHub Release descargable.

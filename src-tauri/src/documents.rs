@@ -98,7 +98,7 @@ fn create_document_folder_inner(
     name: String,
 ) -> Result<DocumentFolder, String> {
     let name = validate_folder_name(&name)?;
-    let connection = lock_connection(&state)?;
+    let connection = lock_connection(state)?;
     validate_folder_exists(&connection, parent_id)?;
     connection
         .execute(
@@ -129,7 +129,7 @@ fn update_document_folder_inner(
     if parent_id == Some(id) {
         return Err("Una carpeta no puede estar dentro de sí misma.".to_owned());
     }
-    let connection = lock_connection(&state)?;
+    let connection = lock_connection(state)?;
     validate_folder_exists(&connection, Some(id))?;
     validate_folder_exists(&connection, parent_id)?;
     if let Some(parent_id) = parent_id {
@@ -169,7 +169,7 @@ pub fn delete_document_folder(state: State<'_, DatabaseState>, id: i64) -> Resul
 }
 
 fn delete_document_folder_inner(state: &DatabaseState, id: i64) -> Result<(), String> {
-    let connection = lock_connection(&state)?;
+    let connection = lock_connection(state)?;
     let changed = connection
         .execute("DELETE FROM document_folders WHERE id = ?1", [id])
         .map_err(|error| {
@@ -222,7 +222,7 @@ fn import_document_inner(
 ) -> Result<DocumentRecord, String> {
     let source = PathBuf::from(input.source_path);
     let validated = validate_source_document(&source)?;
-    let connection = lock_connection(&state)?;
+    let connection = lock_connection(state)?;
     validate_folder_exists(&connection, input.folder_id)?;
     validate_client_exists(&connection, input.client_id)?;
 
@@ -276,7 +276,7 @@ fn update_document_inner(
     id: i64,
     input: UpdateDocumentInput,
 ) -> Result<DocumentRecord, String> {
-    let connection = lock_connection(&state)?;
+    let connection = lock_connection(state)?;
     let extension: String = connection
         .query_row(
             "SELECT extension FROM documents WHERE id = ?1",
@@ -336,7 +336,7 @@ fn export_document_inner(
     if !destination.is_absolute() || !destination.parent().is_some_and(Path::is_dir) {
         return Err("Selecciona una ubicación válida para exportar el archivo.".to_owned());
     }
-    let connection = lock_connection(&state)?;
+    let connection = lock_connection(state)?;
     let stored_name = query_stored_name(&connection, id)?;
     let source = stored_document_path(&state.documents_path, &stored_name)?;
     if !source.is_file() {
@@ -355,7 +355,7 @@ pub fn delete_document(state: State<'_, DatabaseState>, id: i64) -> Result<(), S
 }
 
 fn delete_document_inner(state: &DatabaseState, id: i64) -> Result<(), String> {
-    let mut connection = lock_connection(&state)?;
+    let mut connection = lock_connection(state)?;
     let stored_name = query_stored_name(&connection, id)?;
     let original = stored_document_path(&state.documents_path, &stored_name)?;
     let removed = state

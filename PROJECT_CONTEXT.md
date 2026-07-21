@@ -101,6 +101,8 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 - Preferencias básicas, moneda e impuestos cuando corresponda.
 - Logotipo local PNG, JPG o WebP validado antes de guardarse y reutilizado en los PDF.
 - Configuración local comprensible y fácil de modificar.
+- Mostrar la ubicación real de la base y los documentos, con una acción controlada para abrir su carpeta en Windows.
+- Mostrar versión, autor, licencia y limitaciones básicas del producto dentro de la aplicación.
 
 ### Backups
 
@@ -114,6 +116,7 @@ El stack no debe cambiarse sin explicar el problema que se intenta resolver, com
 - Mostrar un resumen del contenido antes de confirmar una restauración.
 - Crear una copia automática de los datos actuales antes de reemplazarlos.
 - Recargar la interfaz después de restaurar para evitar estados visuales obsoletos.
+- Registrar y mostrar la fecha del último respaldo creado correctamente.
 
 ### Archivos — extensión autorizada para V1.1
 
@@ -183,6 +186,8 @@ Medidas implementadas para la distribución de escritorio:
 - CSP de desarrollo separada para permitir el servidor local y la recarga de Vite sin debilitar el ejecutable publicado.
 - Capacidades de plugins limitadas a abrir y guardar mediante los diálogos nativos que usa la interfaz.
 - Icono de marca versionado como SVG y convertido localmente a los formatos requeridos por Tauri.
+- Instalador NSIS en español y por usuario para evitar permisos de administrador innecesarios.
+- Revisión automatizada en GitHub Actions de lint, tipos, construcción, formato, pruebas y Clippy.
 
 ## Experiencia de usuario
 
@@ -206,6 +211,7 @@ Patrones implementados en la interfaz actual:
 - Avisos accionables que llevan al usuario a Clientes o Configuración cuando una cotización está bloqueada.
 - Recorrido inicial de cuatro pasos que explica el flujo, el almacenamiento local y los respaldos.
 - Carga opcional y transaccional de datos ficticios relacionados, disponible únicamente cuando la base está completamente vacía.
+- Acceso visible desde Dashboard y Configuración a la ubicación de los datos locales y al estado del último respaldo.
 
 Los ejemplos iniciales deben usar nombres visibles como demostración y direcciones del dominio reservado `example.invalid`. Nunca deben reemplazar, mezclar ni modificar información existente. No se incluyen archivos físicos de ejemplo para evitar escribir documentos innecesarios en el equipo del usuario.
 

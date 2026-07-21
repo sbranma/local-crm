@@ -1,59 +1,115 @@
 # Local CRM
 
-Aplicación de escritorio local para que pequeños negocios administren clientes, tareas, agenda, cotizaciones, inventario básico y documentos sin depender de un servidor externo para las funciones principales.
+CRM de escritorio para pequeños negocios y profesionales independientes que necesitan administrar su operación sin depender de un servidor externo. Funciona en Windows, conserva la información localmente y puede usarse sin conexión a Internet en sus funciones principales.
 
-## Estado
+**Estado:** candidata a versión 0.1.0 para Windows.
 
-El proyecto se encuentra en construcción. La base utiliza React, TypeScript, Vite, Tauri y SQLite. El Dashboard reúne tareas vencidas, agenda próxima, alertas, actividad comercial y clientes recientes mediante consultas agregadas, y guía la configuración inicial con una lista de primeros pasos. El módulo de Clientes permite crear, consultar, editar, buscar, archivar, restaurar y eliminar definitivamente registros archivados. Tareas administra actividades internas o asociadas a clientes. Agenda combina esas tareas programadas con citas, reuniones, llamadas y recordatorios propios, sin duplicar los datos. Cotizaciones mantiene un historial por cliente, calcula importes con enteros, controla estados y genera documentos PDF con los datos y el logotipo configurados para el negocio. Inventario administra un catálogo de productos y servicios, precios, existencias y movimientos auditables, y permite reutilizar el catálogo al preparar cotizaciones. Archivos organiza documentos privados en carpetas, permite asociarlos con clientes y abrirlos o exportarlos desde la aplicación. La interfaz agrupa la navegación por contexto, adapta la barra lateral a ventanas angostas y separa claramente los estados vacíos de los errores de carga.
+## Qué problema resuelve
 
-## Primera ejecución y demostración
+Muchos negocios pequeños necesitan organizar clientes, compromisos, cotizaciones, inventario y documentos, pero no requieren una plataforma empresarial ni una suscripción mensual. Local CRM reúne ese flujo en una aplicación local, comprensible y fácil de respaldar.
 
-Al abrir una instalación nueva, un recorrido de cuatro pasos explica el flujo principal, dónde se guardan los datos y cómo funcionan los respaldos. Si la base está completamente vacía, el usuario puede empezar desde cero o cargar un conjunto ficticio relacionado que incluye:
+El producto está orientado a técnicos, contratistas, freelancers, consultores, pequeñas agencias y proveedores de servicios que trabajan solos o con un equipo reducido.
 
-- Un negocio de demostración y tres clientes.
-- Tres tareas y dos eventos próximos.
-- Cuatro productos o servicios con movimientos de inventario.
-- Una cotización enviada con conceptos del catálogo.
+## Funciones principales
 
-Los ejemplos están identificados mediante nombres y notas de demostración y utilizan correos `example.invalid`. La carga se realiza dentro de una transacción de SQLite y se rechaza si ya existe información, por lo que nunca mezcla ejemplos con datos del usuario. No se agregan archivos físicos de demostración.
+- Dashboard con trabajo próximo, prioridades, estado comercial y clientes recientes.
+- CRUD de clientes con búsqueda, archivo, restauración y eliminación confirmada.
+- Tareas con prioridad, estado, fecha programada y relación opcional con clientes.
+- Agenda mensual, semanal y diaria que combina eventos y tareas sin duplicarlas.
+- Cotizaciones con conceptos, impuestos, descuentos, estados, historial y PDF sin conexión.
+- Catálogo de productos y servicios con movimientos auditables y control de stock.
+- Archivos privados organizados en carpetas y relacionados opcionalmente con clientes.
+- Configuración del negocio, moneda, condiciones y logotipo para documentos.
+- Respaldos completos `.localcrm` con validación, vista previa y restauración segura.
+- Recorrido de primer uso y datos ficticios opcionales para demostrar el flujo completo.
 
-## Desarrollo
+## Arquitectura
 
-Requisitos principales para Windows:
+```mermaid
+flowchart LR
+    UI[React + TypeScript] --> IPC[Comandos Tauri]
+    IPC --> RULES[Reglas de negocio en Rust]
+    RULES --> DB[(SQLite local)]
+    RULES --> FILES[Documentos privados]
+    RULES --> BACKUP[Respaldos .localcrm]
+    UI --> PDF[PDF local con jsPDF]
+```
+
+La interfaz no consulta SQLite directamente. React presenta la información y valida la interacción; los comandos de Tauri exponen operaciones concretas; Rust aplica reglas, valida entradas y accede a SQLite mediante consultas parametrizadas.
+
+## Decisiones técnicas destacadas
+
+- Los importes monetarios se guardan como enteros para evitar errores de coma flotante.
+- Las cantidades de inventario admiten milésimas sin usar números decimales en SQLite.
+- Las cotizaciones conservan una copia de los datos y precios utilizados como historial.
+- Tareas y eventos son fuentes separadas que Agenda combina solamente al presentarlas.
+- Las salidas de inventario no pueden producir existencias negativas.
+- Los documentos usan nombres internos generados y validación de tipo, tamaño y ruta.
+- Las migraciones mantienen compatibilidad con bases locales de versiones anteriores.
+- Los datos ficticios solo pueden cargarse en una base completamente vacía y dentro de una transacción.
+
+## Datos locales y privacidad
+
+La instalación y los datos están separados:
+
+```text
+Aplicación:  %LOCALAPPDATA%\Local CRM
+Base SQLite: %APPDATA%\com.localcrm.desktop\local-crm.sqlite3
+Documentos:  %APPDATA%\com.localcrm.desktop\documents
+```
+
+Los PDF, las copias exportadas y los respaldos se guardan donde el usuario elija mediante diálogos nativos de Windows. Antes de una restauración, Local CRM crea automáticamente `local-crm-before-last-restore.localcrm` junto a la base activa.
+
+La información local y los respaldos **no están cifrados**. La aplicación está diseñada para un solo usuario en una computadora Windows y no incluye autenticación, sincronización en la nube ni permisos multiusuario.
+
+## Probar la aplicación
+
+Cuando se publique la primera versión, el instalador NSIS para Windows estará adjunto en GitHub Releases. La instalación se realiza para el usuario actual, en español y sin requerir permisos de administrador para la carpeta del programa.
+
+En una instalación nueva se puede:
+
+1. Recorrer la guía inicial de cuatro pasos.
+2. Empezar con una base vacía o cargar datos ficticios identificados como demostración.
+3. Explorar el flujo Cliente → Tarea o Agenda → Cotización → PDF.
+4. Crear un respaldo desde **Configuración → Respaldos**.
+
+Windows puede mostrar una advertencia de SmartScreen porque el instalador de portafolio no está firmado digitalmente.
+
+## Desarrollo local
+
+### Requisitos
 
 - Node.js LTS y npm.
-- Rust con el toolchain estable MSVC.
-- Microsoft C++ Build Tools con la carga de trabajo para escritorio.
+- Rust estable con toolchain MSVC.
+- Microsoft C++ Build Tools para escritorio.
 - Microsoft Edge WebView2.
 
-Comandos:
+### Comandos
 
 ```powershell
 npm.cmd install
 npm.cmd run tauri dev
 ```
 
-Comprobaciones disponibles:
+Comprobaciones de calidad:
 
 ```powershell
+npm.cmd run lint
 npm.cmd run typecheck
 npm.cmd run build
+cargo fmt --manifest-path src-tauri/Cargo.toml --check
+cargo test --manifest-path src-tauri/Cargo.toml
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
-Los datos, eventos, metadatos de archivos y el logotipo se guardan en la base SQLite local. Los documentos importados se copian a la carpeta privada de la aplicación. Los PDF y respaldos se generan sin conexión y el usuario elige su ubicación mediante un diálogo nativo de Windows.
+GitHub Actions ejecuta estas comprobaciones en cada pull request y actualización de `main`.
 
-## Datos y respaldos
+## Alcance y limitaciones
 
-La base activa se guarda en `%APPDATA%\com.localcrm.desktop\local-crm.sqlite3` y los documentos en `%APPDATA%\com.localcrm.desktop\documents`. Desde **Configuración → Respaldos** se puede exportar toda la información, incluidos esos documentos, a un único archivo `.localcrm` y restaurarla posteriormente.
+Local CRM no pretende sustituir un ERP, un sistema fiscal ni una plataforma colaborativa. Reportes avanzados, correo, WhatsApp, facturación fiscal, autenticación, cifrado y sincronización permanecen fuera de esta versión.
 
-Antes de restaurar, la aplicación comprueba la firma SQLite, la versión del esquema, las tablas obligatorias, la integridad interna y las relaciones. También muestra un resumen del contenido y solicita confirmación explícita. Inmediatamente antes de reemplazar los datos crea `%APPDATA%\com.localcrm.desktop\local-crm-before-last-restore.localcrm` como copia automática del estado anterior.
+Las decisiones de producto, arquitectura, seguridad y alcance están documentadas en [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md).
 
-Los archivos `.localcrm` son bases SQLite completas que empaquetan temporalmente el contenido binario de los documentos junto con sus metadatos. Tanto la carpeta activa de documentos como los respaldos contienen información privada y actualmente **no están cifrados**, por lo que deben guardarse en una ubicación segura.
+## Autor y licencia
 
-## Distribución para Windows
-
-La identidad de la aplicación parte de un SVG local y Tauri genera los tamaños PNG y el archivo ICO usados por Windows. El paquete está configurado para producir un instalador NSIS con los metadatos de Local CRM.
-
-La versión compilada usa una política de seguridad de contenido que limita la interfaz a recursos locales, el canal IPC de Tauri y las imágenes embebidas necesarias para logotipos. La capacidad del plugin de diálogos permite únicamente abrir y guardar archivos mediante ventanas nativas. La política de desarrollo permanece separada para que Vite pueda ejecutarse localmente.
-
-Consulta `PROJECT_CONTEXT.md` para el alcance y las decisiones principales del producto, y `ROADMAP_CURSO.md` para el orden de implementación.
+Proyecto de portafolio de **sbranma**, publicado bajo la [licencia MIT](LICENSE).

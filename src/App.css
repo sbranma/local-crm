@@ -491,6 +491,16 @@ h1 {
   white-space: nowrap;
 }
 
+.local-badge-button {
+  cursor: pointer;
+}
+
+.local-badge-button:hover {
+  border-color: #e3b23f;
+  color: #263b62;
+  background: #fffaf0;
+}
+
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1174,12 +1184,125 @@ h1 {
   grid-column: 1 / -1;
 }
 
+.settings-storage,
+.settings-about {
+  grid-column: 1 / -1;
+}
+
+.settings-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.settings-section-heading .page-description {
+  max-width: 700px;
+  margin-top: 6px;
+}
+
+.storage-path {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #dce3ed;
+  border-radius: 11px;
+  padding: 13px 14px;
+  background: #f8f9fb;
+}
+
+.storage-path span,
+.storage-details-grid span,
+.about-details-grid span {
+  color: #778399;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.storage-path code {
+  overflow-wrap: anywhere;
+  color: #33425e;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.8rem;
+}
+
+.storage-details-grid,
+.about-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.storage-details-grid > div,
+.about-details-grid > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  border: 1px solid #e1e6ee;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.storage-details-grid strong,
+.about-details-grid strong {
+  color: #344463;
+  font-size: 0.86rem;
+}
+
+.storage-details-grid small {
+  overflow: hidden;
+  color: #7b879b;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storage-notice {
+  margin-top: 12px;
+  border-left: 3px solid #d9a51f;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #68521e;
+  background: #fff9e9;
+}
+
+.storage-notice p {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+}
+
 .settings-backups .settings-card-header {
   margin-bottom: 16px;
 }
 
 .settings-backups .page-description {
   margin-top: 6px;
+}
+
+.backup-status {
+  width: fit-content;
+  margin: 10px 0 0;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #246849;
+  background: #e9f6ef;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.backup-status.pending {
+  color: #8a5a00;
+  background: #fff0c2;
+}
+
+.settings-about .settings-card-header {
+  margin-bottom: 14px;
+}
+
+.about-details-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .backup-actions-grid {
@@ -2763,7 +2886,9 @@ h1 {
   }
 
   .settings-preferences,
+  .settings-storage,
   .settings-backups,
+  .settings-about,
   .settings-save-bar {
     grid-column: auto;
   }
@@ -2773,6 +2898,10 @@ h1 {
   }
 
   .backup-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .about-details-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -3005,6 +3134,20 @@ h1 {
 }
 
 @media (max-width: 760px) {
+  .settings-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-section-heading .secondary-button {
+    width: 100%;
+  }
+
+  .storage-details-grid,
+  .about-details-grid {
+    grid-template-columns: 1fr;
+  }
+
   .onboarding-content {
     min-height: 330px;
     padding: 30px 28px;

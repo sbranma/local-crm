@@ -128,7 +128,13 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           <h1>{summary?.businessName ?? "Dashboard"}</h1>
           <p className="page-description">{capitalize(fullDateFormatter.format(today))}</p>
         </div>
-        <span className="local-badge">Datos locales</span>
+        <button
+          className="local-badge local-badge-button"
+          type="button"
+          onClick={() => onNavigate("Configuración")}
+        >
+          Datos locales
+        </button>
       </header>
 
       <nav className="dashboard-shortcuts" aria-label="Accesos rápidos">

@@ -1,0 +1,54 @@
+name: Calidad
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Tipos, lint, build y pruebas
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias frontend
+        run: npm ci
+
+      - name: Ejecutar lint
+        run: npm run lint
+
+      - name: Revisar tipos
+        run: npm run typecheck
+
+      - name: Construir frontend
+        run: npm run build
+
+      - name: Preparar Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          rustup default stable
+
+      - name: Revisar formato Rust
+        working-directory: src-tauri
+        run: cargo fmt --check
+
+      - name: Ejecutar pruebas Rust
+        working-directory: src-tauri
+        run: cargo test
+
+      - name: Ejecutar Clippy
+        working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings

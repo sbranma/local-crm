@@ -1,5 +1,6 @@
 use crate::{
     database::{migrate_to_current_schema, CURRENT_SCHEMA_VERSION},
+    system::record_successful_backup,
     DatabaseState,
 };
 use rusqlite::{backup::Progress, params, Connection, OpenFlags, MAIN_DB};
@@ -62,7 +63,9 @@ pub fn export_backup(
 
     let connection = lock_connection(&state)?;
     export_database(&connection, &destination, &state.documents_path)?;
-    inspect_backup_path(&destination)
+    let backup = inspect_backup_path(&destination)?;
+    record_successful_backup(&connection)?;
+    Ok(backup)
 }
 
 #[tauri::command]

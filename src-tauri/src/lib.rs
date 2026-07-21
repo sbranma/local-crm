@@ -9,6 +9,7 @@ mod inventory;
 mod pdf_export;
 mod quotes;
 mod settings;
+mod system;
 mod tasks;
 
 use rusqlite::Connection;
@@ -83,6 +84,8 @@ pub fn run() {
             tasks::delete_task,
             settings::get_business_settings,
             settings::update_business_settings,
+            system::get_system_info,
+            system::open_data_directory,
             quotes::create_quote,
             quotes::list_quotes,
             quotes::get_quote,
