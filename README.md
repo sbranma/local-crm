@@ -4,9 +4,9 @@
 
 CRM de escritorio para pequeños negocios y profesionales independientes que necesitan administrar su operación sin depender de un servidor externo. Funciona en Windows, conserva la información localmente y puede usarse sin conexión a Internet en sus funciones principales.
 
-**Estado:** candidata a versión 0.1.0 para Windows.
+**Estado:** versión 0.1.0 pública para Windows x64.
 
-[Versiones y descargas para Windows](https://github.com/sbranma/local-crm/releases)
+[Descargar Local CRM v0.1.0 para Windows](https://github.com/sbranma/local-crm/releases/tag/v0.1.0)
 
 ## Qué problema resuelve
 
@@ -68,7 +68,7 @@ La información local y los respaldos **no están cifrados**. La aplicación est
 
 ## Probar la aplicación
 
-Cuando se publique la primera versión, el instalador NSIS para Windows estará adjunto en GitHub Releases. La instalación se realiza para el usuario actual, en español y sin requerir permisos de administrador para la carpeta del programa.
+El instalador NSIS está disponible en [GitHub Releases](https://github.com/sbranma/local-crm/releases/tag/v0.1.0). La instalación se realiza para el usuario actual, en español y sin requerir permisos de administrador para la carpeta del programa.
 
 En una instalación nueva se puede:
 
