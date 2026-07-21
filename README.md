@@ -8,6 +8,10 @@ CRM de escritorio para pequeños negocios y profesionales independientes que nec
 
 [Descargar Local CRM v0.1.0 para Windows](https://github.com/sbranma/local-crm/releases/tag/v0.1.0)
 
+![Recorrido de Local CRM con datos ficticios](docs/assets/local-crm-demo.gif)
+
+*Recorrido real de la aplicación con información ficticia generada por su modo de demostración.*
+
 ## Qué problema resuelve
 
 Muchos negocios pequeños necesitan organizar clientes, compromisos, cotizaciones, inventario y documentos, pero no requieren una plataforma empresarial ni una suscripción mensual. Local CRM reúne ese flujo en una aplicación local, comprensible y fácil de respaldar.
@@ -107,6 +111,10 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
 GitHub Actions ejecuta estas comprobaciones en cada pull request y actualización de `main`.
+
+## Desarrollo asistido por IA
+
+Durante el desarrollo se utilizaron herramientas de inteligencia artificial como apoyo para explorar alternativas, acelerar iteraciones y revisar implementación y documentación. El alcance, las decisiones de producto y arquitectura, la validación de resultados, las pruebas y el control de versiones permanecieron bajo criterio y supervisión del autor.
 
 ## Alcance y limitaciones
 
