@@ -1,8 +1,12 @@
 # Local CRM
 
+[![Calidad](https://github.com/sbranma/local-crm/actions/workflows/ci.yml/badge.svg)](https://github.com/sbranma/local-crm/actions/workflows/ci.yml)
+
 CRM de escritorio para pequeños negocios y profesionales independientes que necesitan administrar su operación sin depender de un servidor externo. Funciona en Windows, conserva la información localmente y puede usarse sin conexión a Internet en sus funciones principales.
 
 **Estado:** candidata a versión 0.1.0 para Windows.
+
+[Versiones y descargas para Windows](https://github.com/sbranma/local-crm/releases)
 
 ## Qué problema resuelve
 
@@ -112,4 +116,4 @@ Las decisiones de producto, arquitectura, seguridad y alcance están documentada
 
 ## Autor y licencia
 
-Proyecto de portafolio de **sbranma**, publicado bajo la [licencia MIT](LICENSE).
+Proyecto de portafolio de **[sbranma](https://github.com/sbranma)**, publicado bajo la [licencia MIT](LICENSE). El código fuente oficial se encuentra en [github.com/sbranma/local-crm](https://github.com/sbranma/local-crm).
